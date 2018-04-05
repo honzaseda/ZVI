@@ -2,6 +2,8 @@ package zvi.Controller;
 
 import javafx.embed.swing.SwingFXUtils;
 import javafx.fxml.FXML;
+import javafx.scene.chart.BarChart;
+import javafx.scene.chart.XYChart;
 import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -24,27 +26,46 @@ public class MainController {
     @FXML
     public ImageView loadedImageView;
 
+    @FXML
+    public BarChart histogramChart;
+
+
     public void FileChooser(){
         FileChooser fileChooser = new FileChooser();
 
-        FileChooser.ExtensionFilter extFilterBMP = new FileChooser.ExtensionFilter("BMP files (*.bmp)", "*.BMP");
-        FileChooser.ExtensionFilter extFilterJPG = new FileChooser.ExtensionFilter("JPG files (*.jpg)", "*.JPG");
-        FileChooser.ExtensionFilter extFilterPNG = new FileChooser.ExtensionFilter("PNG files (*.png)", "*.PNG");
+        FileChooser.ExtensionFilter extFilterBMP = new FileChooser.ExtensionFilter("Soubory BMP (*.bmp)", "*.BMP");
+        FileChooser.ExtensionFilter extFilterJPG = new FileChooser.ExtensionFilter("Soubory JPG (*.jpg)", "*.JPG");
+        FileChooser.ExtensionFilter extFilterPNG = new FileChooser.ExtensionFilter("Soubory PNG (*.png)", "*.PNG");
         fileChooser.getExtensionFilters().addAll(extFilterBMP, extFilterJPG, extFilterPNG);
 
-        fileChooser.setTitle("Open Resource File");
+        fileChooser.setTitle("Otevřít soubor");
         File loadedImage = fileChooser.showOpenDialog(Main.parentWindow);
 
         try {
             BufferedImage bufferedImage = ImageIO.read(loadedImage);
-            Image image = SwingFXUtils.toFXImage(bufferedImage, null);
-            loadedImageView.setImage(image);
+            LoadImage(bufferedImage);
 
-            Histogram imageHistogram = new Histogram(bufferedImage);
         } catch (IOException ex) {
-            Logger.getLogger(MainController.class.getName()).log(Level.INFO, "No file selected.", ex);
+            Logger.getLogger(MainController.class.getName()).log(Level.INFO, "Chyba při načítání souboru.", ex);
         }
 
 
+    }
+
+    private void LoadImage(BufferedImage bufferedImage){
+        Image image = SwingFXUtils.toFXImage(bufferedImage, null);
+        loadedImageView.setImage(image);
+
+        Histogram imageHistogram = new Histogram(bufferedImage);
+        drawHistogramChart(imageHistogram.getImageHistogram());
+    }
+
+    public void drawHistogramChart(int[] histogramValues){
+        final XYChart.Series<String, Number> histogramSeries = new XYChart.Series<String, Number>();
+        histogramChart.getData().clear();
+        for(int i = 0; i < histogramValues.length; i++){
+            histogramSeries.getData().add(new XYChart.Data<String, Number>(Integer.toString(i), histogramValues[i]));
+        }
+        histogramChart.getData().add(histogramSeries);
     }
 }

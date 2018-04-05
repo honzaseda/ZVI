@@ -28,8 +28,6 @@ public class Histogram {
                 this.imageHistogram[pixelsBrightness[x][y]]++;
             }
         }
-
-        System.out.println("");
     }
 
     private static void convertToGrayScale(BufferedImage image)
