@@ -18,10 +18,10 @@ public class Main extends Application {
         FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/Stage/Main.fxml"));
         Parent root = fxmlLoader.load();
         loginStage.setTitle("Image Segmentation");
-        loginStage.setScene(new Scene(root, 350, 440));
+        loginStage.setScene(new Scene(root, 600, 480));
         loginStage.getIcons().add(new Image("/Public/Img/icon.png"));
         loginStage.show();
-        MainController l = fxmlLoader.getController();
+//        MainController l = fxmlLoader.getController();
         Main.parentWindow = loginStage;
     }
 

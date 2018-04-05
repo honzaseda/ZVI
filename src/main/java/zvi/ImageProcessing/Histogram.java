@@ -1,22 +1,35 @@
 package zvi.ImageProcessing;
 
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
 import java.util.HashMap;
 
 public class Histogram {
-    HashMap<String, Integer> imageHistogram;
+    int[] imageHistogram;
 
     public Histogram(BufferedImage image){
-        this.imageHistogram = new HashMap<String, Integer>();
+        this.imageHistogram = new int[256];
         createHistogram(image);
     }
 
-    public HashMap getImageHistogram(){
+    public int[] getImageHistogram(){
         return this.imageHistogram;
     }
 
-    public void createHistogram(BufferedImage image){
+    private void createHistogram(BufferedImage image){
         convertToGrayScale(image);
+        int imageWidth = image.getWidth();
+        int imageHeigth = image.getHeight();
+        int[][] pixelsBrightness;
+        pixelsBrightness = getImageMap(image, imageWidth, imageHeigth);
+
+        for (int x = 0; x < imageWidth; x++){
+            for (int y = 0; y < imageHeigth; y++){
+                this.imageHistogram[pixelsBrightness[x][y]]++;
+            }
+        }
+
+        System.out.println("");
     }
 
     private static void convertToGrayScale(BufferedImage image)
@@ -35,5 +48,18 @@ public class Histogram {
             }
     }
 
+    private static int[][] getImageMap(BufferedImage image, int imageWidth, int imageHeigth){
+        int[][] pixels = new int[imageWidth][imageHeigth];
+
+        DataBufferByte db = (DataBufferByte)image.getRaster().getDataBuffer();
+        byte[] pixelarray = db.getData();
+        for (int x = 0; x < imageWidth; x++ ) {
+            for (int y = 0; y < imageHeigth; y++ ) {
+                pixels[x][y] = pixelarray[x + y * imageWidth] &0xFF;
+            }
+        }
+
+        return pixels;
+    }
 
 }

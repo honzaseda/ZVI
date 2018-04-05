@@ -37,13 +37,12 @@ public class MainController {
 
         try {
             BufferedImage bufferedImage = ImageIO.read(loadedImage);
-//            convertToGrayScale(bufferedImage);
             Image image = SwingFXUtils.toFXImage(bufferedImage, null);
             loadedImageView.setImage(image);
 
             Histogram imageHistogram = new Histogram(bufferedImage);
         } catch (IOException ex) {
-            Logger.getLogger(MainController.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(MainController.class.getName()).log(Level.INFO, "No file selected.", ex);
         }
 
 
