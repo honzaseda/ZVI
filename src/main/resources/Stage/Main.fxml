@@ -3,6 +3,7 @@
 <?import javafx.scene.chart.BarChart?>
 <?import javafx.scene.chart.CategoryAxis?>
 <?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.control.ChoiceBox?>
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
@@ -35,8 +36,8 @@
     </MenuBar>
     <AnchorPane maxHeight="-1.0" maxWidth="-1.0" prefHeight="561.0" prefWidth="961.0" VBox.vgrow="ALWAYS">
       <children>
-            <ImageView fx:id="loadedImageView" fitHeight="353.0" fitWidth="298.0" layoutX="14.0" layoutY="14.0" pickOnBounds="true" preserveRatio="true" />
-            <BarChart fx:id="histogramChart" barGap="0.0" categoryGap="0.0" horizontalGridLinesVisible="false" layoutX="365.0" layoutY="14.0" legendVisible="false" prefHeight="435.0" prefWidth="686.0" title="Image histogram" verticalGridLinesVisible="false">
+            <ImageView fx:id="loadedImageView" fitHeight="250.0" fitWidth="250.0" layoutX="14.0" layoutY="14.0" pickOnBounds="true" preserveRatio="true" />
+            <BarChart fx:id="histogramChart" barGap="0.0" categoryGap="0.0" horizontalGridLinesVisible="false" layoutX="365.0" layoutY="14.0" legendVisible="false" prefHeight="428.0" prefWidth="680.0" title="Image histogram" verticalGridLinesVisible="false">
               <xAxis>
                 <CategoryAxis side="BOTTOM" />
               </xAxis>
@@ -44,6 +45,7 @@
                 <NumberAxis side="LEFT" />
               </yAxis>
             </BarChart>
+            <ChoiceBox fx:id="segmentationMethod" layoutX="14.0" layoutY="272.0" prefHeight="25.0" prefWidth="250.0" />
       </children>
     </AnchorPane>
   </children>

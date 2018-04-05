@@ -28,6 +28,7 @@ public class Histogram {
                 this.imageHistogram[pixelsBrightness[x][y]]++;
             }
         }
+        filterHistogram();
     }
 
     private static void convertToGrayScale(BufferedImage image)
@@ -60,4 +61,21 @@ public class Histogram {
         return pixels;
     }
 
+    public static int findThreshold(){
+        return 0;
+    }
+
+    /*
+    Filtering using basic FIR with [1,2,1] mask
+     */
+    private void filterHistogram(){
+        int length = this.imageHistogram.length;
+        int[] filteredHistogram = new int[length];
+        filteredHistogram[0] = this.imageHistogram[0];
+        for(int i = 1; i < length - 2; i++){
+            filteredHistogram[i] = (this.imageHistogram[i-1] + this.imageHistogram[i+1] + 2*this.imageHistogram[i])/4;
+        }
+        filteredHistogram[length-1] = this.imageHistogram[length-1];
+        this.imageHistogram = filteredHistogram;
+    }
 }

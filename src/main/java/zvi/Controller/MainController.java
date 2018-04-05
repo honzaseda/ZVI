@@ -1,9 +1,11 @@
 package zvi.Controller;
 
+import javafx.collections.FXCollections;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.fxml.FXML;
 import javafx.scene.chart.BarChart;
 import javafx.scene.chart.XYChart;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -29,6 +31,14 @@ public class MainController {
     @FXML
     public BarChart histogramChart;
 
+    @FXML
+    public ChoiceBox segmentationMethod;
+
+    @FXML
+    protected void initialize(){
+        segmentationMethod.setItems(FXCollections.observableArrayList("Automatické prahování"));
+        segmentationMethod.getSelectionModel().select(0);
+    }
 
     public void FileChooser(){
         FileChooser fileChooser = new FileChooser();
