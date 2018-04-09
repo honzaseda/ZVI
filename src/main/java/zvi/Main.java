@@ -14,11 +14,11 @@ public class Main extends Application {
     public static Stage parentWindow;
 
     @Override
-    public void start(Stage loginStage) throws Exception{
+    public void start(Stage loginStage) throws Exception {
         FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/Stage/Main.fxml"));
         Parent root = fxmlLoader.load();
         loginStage.setTitle("Image Segmentation");
-        loginStage.setScene(new Scene(root, 600, 480));
+        loginStage.setScene(new Scene(root, 700, 600));
         loginStage.getIcons().add(new Image("/Public/Img/icon.png"));
         loginStage.show();
 //        MainController l = fxmlLoader.getController();
