@@ -43,7 +43,7 @@
                   <ImageView fx:id="loadedImageView" fitHeight="250.0" fitWidth="250.0" onMouseClicked="#FileChooser" pickOnBounds="true" preserveRatio="true" />
                </children>
             </AnchorPane>
-            <BarChart fx:id="histogramChart" barGap="0.0" categoryGap="0.0" horizontalGridLinesVisible="false" layoutX="284.0" layoutY="320.0" legendVisible="false" prefHeight="221.0" prefWidth="400.0" title="Image histogram" verticalGridLinesVisible="false">
+            <BarChart fx:id="histogramChart" alternativeRowFillVisible="false" animated="false" barGap="0.0" categoryGap="0.0" horizontalGridLinesVisible="false" layoutX="284.0" layoutY="320.0" legendVisible="false" prefHeight="221.0" prefWidth="400.0" title="Image histogram" verticalGridLinesVisible="false" verticalZeroLineVisible="false">
               <xAxis>
                 <CategoryAxis side="BOTTOM" />
               </xAxis>
@@ -59,6 +59,7 @@
                   <Label layoutX="21.0" layoutY="57.0" text="Počet prahů" />
                   <CheckBox fx:id="automaticThreshold" layoutX="10.0" layoutY="34.0" mnemonicParsing="false" text="Automatické prahování" />
                   <Button fx:id="thresholdSegmentationBtn" layoutX="65.0" layoutY="112.0" mnemonicParsing="false" onAction="#AutoSegmentation" text="Segmentovat obraz" />
+                  <Button layoutX="50.0" layoutY="161.0" mnemonicParsing="false" onAction="#manual" text="Ručně prahovaná segmentace" />
                </children>
             </AnchorPane>
             <ImageView fx:id="segmentedImageView" fitHeight="304.0" fitWidth="400.0" layoutX="284.0" layoutY="15.0" pickOnBounds="true" preserveRatio="true" />
