@@ -1,7 +1,6 @@
 package zvi.ImageProcessing;
 
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferByte;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -9,12 +8,13 @@ import java.util.List;
 public class ThresholdSegmentation {
     private int[] imageHistogram;
     private List<Integer> thresholds = new ArrayList<>();
-    private ImageHandler imageHandler;
+    private ImageHandler loadedImage;
+    public ImageHandler segmentedImage;
 
     public ThresholdSegmentation(ImageHandler imageHandler, boolean filtering) {
         this.imageHistogram = new int[256];
-        this.imageHandler = imageHandler;
-        createHistogram(imageHandler.convertToGrayScale(imageHandler.getImage()));
+        this.loadedImage = imageHandler;
+        createHistogram(imageHandler);
         if(filtering){
             filterHistogram();
         }
@@ -24,30 +24,17 @@ public class ThresholdSegmentation {
         return this.imageHistogram;
     }
 
-    private void createHistogram(BufferedImage image) {
+    private void createHistogram(ImageHandler imageHandler) {
+        BufferedImage image = imageHandler.getImage();
         int imageWidth = image.getWidth();
         int imageHeigth = image.getHeight();
-        int[][] pixelsBrightness;
-        pixelsBrightness = getImageMap(image, imageWidth, imageHeigth);
+        int[][] pixelsBrightness = imageHandler.getGrayscaleMap();
 
         for (int x = 0; x < imageWidth; x++) {
             for (int y = 0; y < imageHeigth; y++) {
                 this.imageHistogram[pixelsBrightness[x][y]]++;
             }
         }
-    }
-
-    private int[][] getImageMap(BufferedImage image, int imageWidth, int imageHeigth) {
-        int[][] pixels = new int[imageWidth][imageHeigth];
-
-        DataBufferByte db = (DataBufferByte) image.getRaster().getDataBuffer();
-        byte[] pixelarray = db.getData();
-        for (int x = 0; x < imageWidth; x++) {
-            for (int y = 0; y < imageHeigth; y++) {
-                pixels[x][y] = pixelarray[x + y * imageWidth] & 0xFF;
-            }
-        }
-        return pixels;
     }
 
     public int findThreshold(int distance) {
@@ -59,7 +46,7 @@ public class ThresholdSegmentation {
     }
 
     public BufferedImage segmentation(){
-        ImageHandler segmentedImage = new ImageHandler(this.imageHandler.convertToGrayScale(this.imageHandler.getImage()));
+        segmentedImage = new ImageHandler(this.loadedImage.getGrayScaleImage());
         Collections.sort(this.thresholds);
         this.thresholds.size();
         System.out.print("Použité prahy:");
@@ -70,19 +57,19 @@ public class ThresholdSegmentation {
 
         for (int x = 0; x < segmentedImage.getImage().getWidth(); ++x) {
             for (int y = 0; y < segmentedImage.getImage().getHeight(); ++y) {
-                int segmentedlevel;
+                int segmentedLevel;
                 int rgb = segmentedImage.getImage().getRGB(x, y);
                 int r = (rgb >> 16) & 0xFF;
                 int g = (rgb >> 8) & 0xFF;
                 int b = (rgb & 0xFF);
                 int grayLevel = (r + g + b) / 3;
                 if(grayLevel <= this.thresholds.get(0)){
-                    segmentedlevel = 0;
+                    segmentedLevel = 0;
                 }
                 else {
-                    segmentedlevel = 255;
+                    segmentedLevel = 255;
                 }
-                int gray = (segmentedlevel << 16) + (segmentedlevel << 8) + segmentedlevel;
+                int gray = (segmentedLevel << 16) + (segmentedLevel << 8) + segmentedLevel;
                 segmentedImage.getImage().setRGB(x, y, gray);
             }
         }

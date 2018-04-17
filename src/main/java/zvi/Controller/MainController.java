@@ -4,24 +4,27 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.embed.swing.SwingFXUtils;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.BorderPane;
 import javafx.stage.FileChooser;
+import javafx.stage.*;
+import zvi.ImageProcessing.MatrixSegmentation;
 import zvi.ImageProcessing.ThresholdSegmentation;
 import zvi.ImageProcessing.ImageHandler;
 import zvi.Main;
 
 import javax.imageio.ImageIO;
-import java.awt.event.MouseEvent;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -37,13 +40,13 @@ public class MainController {
     public ImageView loadedImageView, segmentedImageView;
 
     @FXML
-    public BarChart histogramChart;
+    public AreaChart histogramChart;
 
     @FXML
     public ChoiceBox segmentationMethod;
 
     @FXML
-    public AnchorPane optionsPane;
+    public AnchorPane thresholdOptions, matrixOptions;
 
     @FXML
     public CheckBox automaticThreshold, filterOption;
@@ -52,10 +55,17 @@ public class MainController {
     public TextField manualThresholdCount;
 
     @FXML
-    public Button thresholdSegmentationBtn;
+    public Button thresholdSegmentationBtn, matrixSegmentationBtn;
 
-    private ImageHandler imageHandler;
+    @FXML
+    public ToggleGroup neighbours;
+
+    @FXML
+    public RadioButton fourNeighbours, eightNeighbours;
+
+    private ImageHandler loadedImage;
     private ThresholdSegmentation thresholdSegmentation;
+    private MatrixSegmentation matrixSegmentation;
 
     @FXML
     protected void initialize() {
@@ -64,6 +74,25 @@ public class MainController {
         automaticThreshold.setSelected(true);
         manualThresholdCount.setDisable(true);
 
+        loadedImageView.setOnMouseClicked(event -> {
+            if (loadedImage != null) {
+                BufferedImage bufferedImage = new BufferedImage((int) loadedImageView.getImage().getWidth(), (int) loadedImageView.getImage().getHeight(),
+                        BufferedImage.TYPE_INT_RGB);
+                openImageWindow("original", loadedImageView.getImage(), loadedImage.getImage());
+
+            }
+        });
+
+        fourNeighbours.setUserData(0);
+        eightNeighbours.setUserData(1);
+
+        segmentedImageView.setOnMouseClicked(event -> {
+            if (matrixSegmentation != null || thresholdSegmentation != null) {
+                BufferedImage bufferedImage = new BufferedImage((int) segmentedImageView.getImage().getWidth(), (int) segmentedImageView.getImage().getHeight(),
+                        BufferedImage.TYPE_INT_RGB);
+                openImageWindow("segmented", segmentedImageView.getImage(), bufferedImage);
+            }
+        });
         segmentationMethod.getSelectionModel().selectedIndexProperty().addListener(
                 new ChangeListener<Number>() {
                     @Override
@@ -72,22 +101,27 @@ public class MainController {
                     }
                 }
         );
+//        histogramChart.getXAxis().setAutoRanging(false);
+//        ((NumberAxis)histogramChart.getXAxis()).setLowerBound(0);
+//        ((NumberAxis)histogramChart.getXAxis()).setUpperBound(255);
     }
 
     private void drawMethodOptions(int selectedMethod) {
-        optionsPane.setVisible(false);
+        thresholdOptions.setVisible(false);
+        matrixOptions.setVisible(false);
         switch (selectedMethod) {
             case 0:
-                optionsPane.setVisible(true);
+                thresholdOptions.setVisible(true);
                 break;
             case 1:
+                matrixOptions.setVisible(true);
                 break;
             case 2:
                 break;
         }
     }
 
-    public void FileChooser() {
+    public void fileChooser() {
         FileChooser fileChooser = new FileChooser();
 
         FileChooser.ExtensionFilter extFilterBMP = new FileChooser.ExtensionFilter("Soubory BMP (*.bmp)", "*.BMP");
@@ -101,9 +135,9 @@ public class MainController {
         try {
             if (loadedFile != null) {
                 BufferedImage bufferedImage = ImageIO.read(loadedFile);
-                imageHandler = new ImageHandler(bufferedImage);
+                loadedImage = new ImageHandler(bufferedImage);
 
-                Image image = SwingFXUtils.toFXImage(imageHandler.convertToGrayScale(imageHandler.getImage()), null);
+                Image image = SwingFXUtils.toFXImage(loadedImage.getGrayScaleImage(), null);
                 loadedImageView.setImage(image);
             }
         } catch (IOException ex) {
@@ -111,9 +145,27 @@ public class MainController {
         }
     }
 
-    public void AutoSegmentation() {
-        thresholdSegmentation = new ThresholdSegmentation(imageHandler, filterOption.isSelected());
+    private void openImageWindow(String name, Image image, BufferedImage bufferedImage) {
+        try {
+//                openImageWindow(thresholdSegmentation.segmentedImage.getImage());
+            File f = new File(name + "Image.jpg");
+            ImageIO.write(SwingFXUtils.fromFXImage(image, bufferedImage), "png", f);
+            Desktop dt = Desktop.getDesktop();
+            dt.open(f);
+        } catch (IOException e) {
+
+        }
+        ;
+    }
+
+    private void openHistogramWindow() {
+
+    }
+
+    public void autoSegmentation() {
+        thresholdSegmentation = new ThresholdSegmentation(loadedImage, filterOption.isSelected());
         drawHistogramChart(thresholdSegmentation.getImageHistogram());
+        histogramChart.setVisible(true);
         int threshold = thresholdSegmentation.findThreshold(100);
 
 
@@ -128,15 +180,16 @@ public class MainController {
         for (int i = 0; i < histogramValues.length; i++) {
             histogramSeries.getData().add(new XYChart.Data<String, Number>(Integer.toString(i), histogramValues[i]));
         }
-        histogramChart.getData().add(histogramSeries);
+        histogramChart.setData(FXCollections.observableArrayList(histogramSeries));
+//        histogramChart.getXAxis().invalidateRange(histogramSeries.getData());
         createCursorGraphCoordsMonitor(histogramChart);
     }
 
-    private void createCursorGraphCoordsMonitor(BarChart<Number, Number> barChart) {
-        final Axis<Number> xAxis = barChart.getXAxis();
-        final Axis<Number> yAxis = barChart.getYAxis();
+    private void createCursorGraphCoordsMonitor(AreaChart<Number, Number> chart) {
+        final Axis<Number> xAxis = chart.getXAxis();
+        final Axis<Number> yAxis = chart.getYAxis();
 
-        final Node chartBackground = barChart.lookup(".chart-plot-background");
+        final Node chartBackground = chart.lookup(".chart-plot-background");
         for (Node n : chartBackground.getParent().getChildrenUnmodifiable()) {
             if (n != chartBackground && n != xAxis && n != yAxis) {
                 n.setMouseTransparent(true);
@@ -149,6 +202,14 @@ public class MainController {
 
             thresholdSegmentation.addThreshold((int) event.getX());
         });
+    }
+
+    public void matrixSegmentation() {
+        histogramChart.setVisible(false);
+        boolean useAllNeighbours = false;
+        matrixSegmentation = new MatrixSegmentation(loadedImage, useAllNeighbours);
+        Image image = SwingFXUtils.toFXImage(matrixSegmentation.segmentedImage.getImage(), null);
+        segmentedImageView.setImage(image);
     }
 
 //    private void chartRefresh() {
