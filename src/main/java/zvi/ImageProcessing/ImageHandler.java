@@ -47,27 +47,27 @@ public class ImageHandler {
         grayscaleMap = pixels;
     }
 
-    public void updateGrayscaleMap(int oldValue, int newValue){
+    public void updateGrayscaleMap(int oldValue, int newValue) {
         int imageWidth = image.getWidth();
         int imageHeight = image.getHeight();
         for (int x = 0; x < imageWidth; x++) {
             for (int y = 0; y < imageHeight; y++) {
-                if(grayscaleMap[x][y] == oldValue){
+                if (grayscaleMap[x][y] == oldValue) {
                     grayscaleMap[x][y] = newValue;
                 }
             }
         }
     }
 
-    public int[][] getGrayscaleMap(){
+    public int[][] getGrayscaleMap() {
         return this.grayscaleMap;
     }
 
-    public void updateImageFromMap(){
+    public void updateImageFromMap() {
         for (int x = 0; x < image.getWidth(); x++) {
             for (int y = 0; y < image.getHeight(); y++) {
                 int gray = (grayscaleMap[x][y] << 16) + (grayscaleMap[x][y] << 8) + grayscaleMap[x][y];
-                image.setRGB(x,y, gray);
+                image.setRGB(x, y, gray);
             }
         }
     }

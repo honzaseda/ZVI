@@ -21,7 +21,6 @@ public class Main extends Application {
         loginStage.setScene(new Scene(root, 700, 600));
         loginStage.getIcons().add(new Image("/Public/Img/icon.png"));
         loginStage.show();
-//        MainController l = fxmlLoader.getController();
         Main.parentWindow = loginStage;
     }
 

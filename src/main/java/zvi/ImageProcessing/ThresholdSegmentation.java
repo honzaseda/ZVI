@@ -7,7 +7,7 @@ import java.util.List;
 
 public class ThresholdSegmentation {
     private int[] imageHistogram;
-    private List<Integer> thresholds = new ArrayList<>();
+    private int threshold;
     private ImageHandler loadedImage;
     public ImageHandler segmentedImage;
 
@@ -15,7 +15,7 @@ public class ThresholdSegmentation {
         this.imageHistogram = new int[256];
         this.loadedImage = imageHandler;
         createHistogram(imageHandler);
-        if(filtering){
+        if (filtering) {
             filterHistogram();
         }
     }
@@ -37,23 +37,17 @@ public class ThresholdSegmentation {
         }
     }
 
-    public int findThreshold(int distance) {
-        return 120;
+    public int findThreshold(int windowSize) {
+        return 0;
     }
 
-    public void addThreshold(int level){
-        this.thresholds.add(level);
+    public void setThreshold(int level) {
+        threshold = level;
     }
 
-    public BufferedImage segmentation(){
+    public BufferedImage segmentation() {
         segmentedImage = new ImageHandler(this.loadedImage.getGrayScaleImage());
-        Collections.sort(this.thresholds);
-        this.thresholds.size();
-        System.out.print("Použité prahy:");
-        for (Integer threshold : this.thresholds) {
-            System.out.print(" " + threshold);
-        }
-        System.out.println("");
+        System.out.println("Probíhá segmentace s ručním prahováním. Použitý práh: " + threshold);
 
         for (int x = 0; x < segmentedImage.getImage().getWidth(); ++x) {
             for (int y = 0; y < segmentedImage.getImage().getHeight(); ++y) {
@@ -63,10 +57,9 @@ public class ThresholdSegmentation {
                 int g = (rgb >> 8) & 0xFF;
                 int b = (rgb & 0xFF);
                 int grayLevel = (r + g + b) / 3;
-                if(grayLevel <= this.thresholds.get(0)){
+                if (grayLevel <= threshold) {
                     segmentedLevel = 0;
-                }
-                else {
+                } else {
                     segmentedLevel = 255;
                 }
                 int gray = (segmentedLevel << 16) + (segmentedLevel << 8) + segmentedLevel;

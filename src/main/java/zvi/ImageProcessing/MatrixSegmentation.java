@@ -1,8 +1,5 @@
 package zvi.ImageProcessing;
 
-import java.awt.image.BufferedImage;
-
-
 public class MatrixSegmentation {
     private int[][] adjacencyMatrix;
     private int numberOfSegments;
@@ -11,21 +8,13 @@ public class MatrixSegmentation {
 
 
     public MatrixSegmentation(ImageHandler imageHandler, boolean useDiagNeighbours) {
-        this.adjacencyMatrix = new int[256][256];
-        this.loadedImage = imageHandler;
-        this.segmentedImage = imageHandler;
-        numberOfSegments = 3;
+        adjacencyMatrix = new int[256][256];
+        loadedImage = imageHandler;
+        segmentedImage = imageHandler;
+        numberOfSegments = 2;
         createAdjacencyMatrix(useDiagNeighbours);
         recoloringSegmentation();
-
         segmentedImage.updateImageFromMap();
-//        for (int i = 0; i < 256; i++) {
-////            System.out.print(i + ":\t");
-////            for (int j = 0; j < 256; j++) {
-//                System.out.print(adjacencyMatrix[i][i] + " ");
-////            }
-////            System.out.println("");
-//        }
     }
 
     private void createAdjacencyMatrix(boolean useDiagNeighbours) {
@@ -65,27 +54,13 @@ public class MatrixSegmentation {
                 }
             }
         }
-//        for (int i = 0; i < 256; i++) {
-//            System.out.print(i + ":\t");
-//            for (int j = 0; j < 256; j++) {
-//                System.out.print(adjacencyMatrix[i][j] + " ");
-//            }
-//            System.out.println("");
-//        }
-//
-//        System.out.println("aaaaaaaaaaaaaaaaaaaaaaaaa\n\n\naaaaaaaaaaaaaaaa");
-//        for (int j = 0; j < 256; j++) {
-//            System.out.print(adjacencyMatrix[j][j] + " ");
-//        }
-//        System.out.println("");
-
     }
 
     void recoloringSegmentation() {
         int minIndex = findDiagMin();
         int maxNeighbour = getMaxNeighbour(minIndex);
-        System.out.println("Min: " + minIndex + ", max neighbour: " + maxNeighbour);
-        for(int i = 0; i < 256; i++){
+//        System.out.println("Min: " + minIndex + ", max neighbour: " + maxNeighbour);
+        for (int i = 0; i < 256; i++) {
             adjacencyMatrix[i][maxNeighbour] += adjacencyMatrix[i][minIndex];
             adjacencyMatrix[i][minIndex] = 0;
 
@@ -94,24 +69,23 @@ public class MatrixSegmentation {
         }
 
         segmentedImage.updateGrayscaleMap(minIndex, maxNeighbour);
-        if(numberOfRegions() > numberOfSegments){
+        if (numberOfRegions() > numberOfSegments) {
             recoloringSegmentation();
         }
     }
 
-    private int numberOfRegions(){
+    private int numberOfRegions() {
         int count = 0;
-        for(int i = 0; i < 256; i++){
-            if(adjacencyMatrix[i][i] > 0){
+        for (int i = 0; i < 256; i++) {
+            if (adjacencyMatrix[i][i] > 0) {
                 count++;
             }
         }
         return count;
     }
 
-    int findDiagMin() {
+    private int findDiagMin() {
         int min = Integer.MAX_VALUE;
-//        int min = adjacencyMatrix[0][0];
         int minIndex = 0;
         for (int j = 0; j < 256; j++) {
             if (adjacencyMatrix[j][j] <= min) {
@@ -124,7 +98,7 @@ public class MatrixSegmentation {
         return minIndex;
     }
 
-    int getMaxNeighbour(int rowIndex) {
+    private int getMaxNeighbour(int rowIndex) {
         int currentMax = adjacencyMatrix[rowIndex][0];
         int maxIndex = 0;
         if (rowIndex == 0) {
@@ -155,8 +129,4 @@ public class MatrixSegmentation {
         }
         return (sum > 0);
     }
-
-//    public ImageHandler getSegmentedImage(){
-//        return this.segmentedImage;
-//    }
 }
