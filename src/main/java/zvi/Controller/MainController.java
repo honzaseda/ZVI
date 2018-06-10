@@ -25,6 +25,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -43,13 +44,13 @@ public class MainController {
     public ChoiceBox segmentationMethod;
 
     @FXML
-    public AnchorPane manualThresholdOptions, matrixOptions;
+    public AnchorPane manualThresholdOptions, matrixOptions, automaticThresholdOptions;
 
     @FXML
-    public CheckBox filterOption;
+    public CheckBox filterOption, normalizeOption;
 
     @FXML
-    public TextField manualThresholdValue;
+    public TextField manualThresholdValue, thresholdVicinity, thresholdDistance, matrixSegments;
 
     @FXML
     public Button createHistogram, matrixSegmentationBtn;
@@ -61,9 +62,9 @@ public class MainController {
     public RadioButton fourNeighbours, eightNeighbours;
 
     @FXML
-    public Label manualThresholdError;
+    public Label manualThresholdError, detectedThresholds, manualThresholds;
 
-    private ImageHandler loadedImage;
+    private BufferedImage loadedImage;
     private ThresholdSegmentation thresholdSegmentation;
     private MatrixSegmentation matrixSegmentation;
 
@@ -72,17 +73,20 @@ public class MainController {
         segmentationMethod.setItems(FXCollections.observableArrayList("Automatické Prahování", "Ruční prahování", "Přebarvování", "Rozplavování"));
         segmentationMethod.getSelectionModel().select(0);
 
+        fourNeighbours.setUserData("four");
+        eightNeighbours.setUserData("eight");
+
+
+        //-- Events
+
         loadedImageView.setOnMouseClicked(event -> {
             if (loadedImage != null) {
                 BufferedImage bufferedImage = new BufferedImage((int) loadedImageView.getImage().getWidth(), (int) loadedImageView.getImage().getHeight(),
                         BufferedImage.TYPE_INT_RGB);
-                openImageWindow("original", loadedImageView.getImage(), loadedImage.getImage());
+                openImageWindow("original", loadedImageView.getImage(), loadedImage);
 
             }
         });
-
-        fourNeighbours.setUserData("four");
-        eightNeighbours.setUserData("eight");
 
         segmentedImageView.setOnMouseClicked(event -> {
             if (matrixSegmentation != null || thresholdSegmentation != null) {
@@ -102,10 +106,12 @@ public class MainController {
     }
 
     private void drawMethodOptions(int selectedMethod) {
+        automaticThresholdOptions.setVisible(false);
         manualThresholdOptions.setVisible(false);
         matrixOptions.setVisible(false);
         switch (selectedMethod) {
             case 0:
+                automaticThresholdOptions.setVisible(true);
                 break;
             case 1:
                 manualThresholdOptions.setVisible(true);
@@ -131,11 +137,11 @@ public class MainController {
 
         try {
             if (loadedFile != null) {
-                BufferedImage bufferedImage = ImageIO.read(loadedFile);
-                loadedImage = new ImageHandler(bufferedImage);
+                loadedImage = ImageIO.read(loadedFile);
 
-                Image image = SwingFXUtils.toFXImage(loadedImage.getGrayScaleImage(), null);
+                Image image = SwingFXUtils.toFXImage(ImageHandler.getGrayScaleImage(loadedImage), null);
                 loadedImageView.setImage(image);
+                System.out.println("created new image handler from " + loadedImage.toString());
             }
         } catch (IOException ex) {
             Logger.getLogger(MainController.class.getName()).log(Level.INFO, "Chyba při načítání souboru.", ex);
@@ -153,7 +159,7 @@ public class MainController {
         }
     }
 
-    public void createHistogramManually() {
+    public void createHistogram() {
         thresholdSegmentation = new ThresholdSegmentation(loadedImage, filterOption.isSelected());
         drawHistogramChart(thresholdSegmentation.getImageHistogram());
         histogramChart.setVisible(true);
@@ -179,9 +185,9 @@ public class MainController {
                 useAllNeighbours = false;
             }
         }
-        System.out.println(useAllNeighbours);
-        matrixSegmentation = new MatrixSegmentation(loadedImage, useAllNeighbours);
-        Image image = SwingFXUtils.toFXImage(matrixSegmentation.segmentedImage.getImage(), null);
+//        System.out.println(useAllNeighbours);
+        matrixSegmentation = new MatrixSegmentation(loadedImage, useAllNeighbours, 3);
+        Image image = SwingFXUtils.toFXImage(matrixSegmentation.getSegmentedImage(), null);
         segmentedImageView.setImage(image);
     }
 
@@ -193,9 +199,30 @@ public class MainController {
             Image image = SwingFXUtils.toFXImage(thresholdSegmentation.segmentation(), null);
             segmentedImageView.setImage(image);
         } else {
-            manualThresholdError.setText("Nebyl zadán práh, segmentace neproběhla");
+            manualThresholdError.setText("Nebyl zadán práh segmentace");
             manualThresholdError.setVisible(true);
         }
 
+    }
+
+    @FXML
+    public void addManualThreshold(){
+        thresholdSegmentation.addThreshold(Integer.parseInt(manualThresholdValue.getText()));
+        manualThresholds.setText(thresholdSegmentation.getThresholds().toString());
+    }
+
+    @FXML
+    public void removeManualThreshold(){
+        thresholdSegmentation.removeThreshold(Integer.parseInt(manualThresholdValue.getText()));
+        manualThresholds.setText(thresholdSegmentation.getThresholds().toString());
+    }
+
+    public void automaticSegmentation() {
+        ArrayList<Integer> thresholds = thresholdSegmentation.findThresholds(Integer.parseInt(thresholdVicinity.getText()), Integer.parseInt(thresholdDistance.getText()));
+        String asdf = "";
+        for (int t : thresholds) {
+            asdf = asdf + ", " + t;
+        }
+        detectedThresholds.setText(asdf);
     }
 }

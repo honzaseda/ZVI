@@ -18,12 +18,11 @@ public class Main extends Application {
         FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/Stage/Main.fxml"));
         Parent root = fxmlLoader.load();
         loginStage.setTitle("Image Segmentation");
-        loginStage.setScene(new Scene(root, 700, 600));
+        loginStage.setScene(new Scene(root, 800, 650));
         loginStage.getIcons().add(new Image("/Public/Img/icon.png"));
         loginStage.show();
         Main.parentWindow = loginStage;
     }
-
 
     public static void main(String[] args) {
         launch(args);

@@ -1,26 +1,39 @@
 package zvi.ImageProcessing;
 
+import java.awt.image.BufferedImage;
+
 public class MatrixSegmentation {
     private int[][] adjacencyMatrix;
     private int numberOfSegments;
-    private ImageHandler loadedImage;
-    public ImageHandler segmentedImage;
+    private BufferedImage loadedImage;
+    private BufferedImage segmentedImage;
+    private int[][] grayscaleMap;
 
 
-    public MatrixSegmentation(ImageHandler imageHandler, boolean useDiagNeighbours) {
+    public MatrixSegmentation(BufferedImage image, boolean useDiagNeighbours, int segments) {
+        loadedImage = image;
+        int imageWidth = loadedImage.getWidth();
+        int imageHeight = loadedImage.getHeight();
+
         adjacencyMatrix = new int[256][256];
-        loadedImage = imageHandler;
-        segmentedImage = imageHandler;
-        numberOfSegments = 2;
+        numberOfSegments = segments;
+
+        segmentedImage = new BufferedImage(imageWidth, imageHeight, BufferedImage.TYPE_INT_RGB);
+        grayscaleMap = ImageHandler.getGrayscaleMap(loadedImage);
+
         createAdjacencyMatrix(useDiagNeighbours);
         recoloringSegmentation();
-        segmentedImage.updateImageFromMap();
+    }
+
+    public BufferedImage getSegmentedImage(){
+        updateImageFromMap();
+        return segmentedImage;
     }
 
     private void createAdjacencyMatrix(boolean useDiagNeighbours) {
-        int imageWidth = loadedImage.getImage().getWidth();
-        int imageHeight = loadedImage.getImage().getHeight();
-        int[][] imagePixels = loadedImage.getGrayscaleMap();
+        int imageWidth = loadedImage.getWidth();
+        int imageHeight = loadedImage.getHeight();
+        int[][] imagePixels = ImageHandler.getGrayscaleMap(loadedImage);
 
         for (int x = 0; x < imageWidth; x++) {
             for (int y = 0; y < imageHeight; y++) {
@@ -56,7 +69,7 @@ public class MatrixSegmentation {
         }
     }
 
-    void recoloringSegmentation() {
+    private void recoloringSegmentation() {
         int minIndex = findDiagMin();
         int maxNeighbour = getMaxNeighbour(minIndex);
 //        System.out.println("Min: " + minIndex + ", max neighbour: " + maxNeighbour);
@@ -68,7 +81,7 @@ public class MatrixSegmentation {
             adjacencyMatrix[minIndex][i] = 0;
         }
 
-        segmentedImage.updateGrayscaleMap(minIndex, maxNeighbour);
+        updateGrayscaleMap(minIndex, maxNeighbour);
         if (numberOfRegions() > numberOfSegments) {
             recoloringSegmentation();
         }
@@ -128,5 +141,26 @@ public class MatrixSegmentation {
             sum += adjacencyMatrix[index][i];
         }
         return (sum > 0);
+    }
+
+    public void updateGrayscaleMap(int oldValue, int newValue) {
+        int imageWidth = loadedImage.getWidth();
+        int imageHeight = loadedImage.getHeight();
+        for (int x = 0; x < imageWidth; x++) {
+            for (int y = 0; y < imageHeight; y++) {
+                if (grayscaleMap[x][y] == oldValue) {
+                    grayscaleMap[x][y] = newValue;
+                }
+            }
+        }
+    }
+
+    public void updateImageFromMap() {
+        for (int x = 0; x < segmentedImage.getWidth(); x++) {
+            for (int y = 0; y < segmentedImage.getHeight(); y++) {
+                int gray = (grayscaleMap[x][y] << 16) + (grayscaleMap[x][y] << 8) + grayscaleMap[x][y];
+                segmentedImage.setRGB(x, y, gray);
+            }
+        }
     }
 }
