@@ -44,7 +44,7 @@ public class MainController {
     public ChoiceBox segmentationMethod;
 
     @FXML
-    public AnchorPane manualThresholdOptions, matrixOptions, automaticThresholdOptions;
+    public AnchorPane manualThresholdOptions, matrixOptions, automaticThresholdOptions, manualThresholdField;
 
     @FXML
     public CheckBox filterOption, normalizeOption;
@@ -53,7 +53,7 @@ public class MainController {
     public TextField manualThresholdValue, thresholdVicinity, thresholdDistance, matrixSegments;
 
     @FXML
-    public Button createHistogram, matrixSegmentationBtn;
+    public Button createHistogram, matrixSegmentationBtn, manualSegmentationBtn;
 
     @FXML
     public ToggleGroup neighbours;
@@ -95,6 +95,7 @@ public class MainController {
                 openImageWindow("segmented", segmentedImageView.getImage(), bufferedImage);
             }
         });
+
         segmentationMethod.getSelectionModel().selectedIndexProperty().addListener(
                 new ChangeListener<Number>() {
                     @Override
@@ -159,9 +160,30 @@ public class MainController {
         }
     }
 
+    public void saveSegmentedFile(){
+        FileChooser fileChooser = new FileChooser();
+
+        FileChooser.ExtensionFilter extFilterBMP = new FileChooser.ExtensionFilter("Soubory BMP (*.bmp)", "*.BMP");
+        FileChooser.ExtensionFilter extFilterJPG = new FileChooser.ExtensionFilter("Soubory JPG (*.jpg)", "*.JPG *.JPEG");
+        FileChooser.ExtensionFilter extFilterPNG = new FileChooser.ExtensionFilter("Soubory PNG (*.png)", "*.PNG");
+        fileChooser.getExtensionFilters().addAll(extFilterBMP, extFilterJPG, extFilterPNG);
+
+        fileChooser.setTitle("Otevřít soubor");
+        File saveFile = fileChooser.showSaveDialog(Main.parentWindow);
+        if (saveFile != null) {
+            try {
+                ImageIO.write(SwingFXUtils.fromFXImage(segmentedImageView.getImage(),
+                        null), "png", saveFile);
+            } catch (IOException ex) {
+
+            }
+        }
+    }
+
     public void createHistogram() {
         thresholdSegmentation = new ThresholdSegmentation(loadedImage, filterOption.isSelected());
         drawHistogramChart(thresholdSegmentation.getImageHistogram());
+        segmentedImageView.setImage(null);
         histogramChart.setVisible(true);
     }
 
@@ -177,6 +199,7 @@ public class MainController {
     }
 
     public void matrixSegmentation() {
+        segmentedImageView.setImage(null);
         histogramChart.setVisible(false);
         boolean useAllNeighbours = true;
 
@@ -185,8 +208,22 @@ public class MainController {
                 useAllNeighbours = false;
             }
         }
-//        System.out.println(useAllNeighbours);
-        matrixSegmentation = new MatrixSegmentation(loadedImage, useAllNeighbours, 3);
+
+
+        int segments = 3;
+        try {
+            if (Integer.parseInt(matrixSegments.getText()) >= 2) {
+                segments = Integer.parseInt(matrixSegments.getText());
+            }
+            else {
+                System.out.println("Neplatný parametr. Bude použito základní nastavení na 3 segmenty.");
+            }
+        }
+        catch (Exception e){
+
+        }
+
+        matrixSegmentation = new MatrixSegmentation(loadedImage, useAllNeighbours, segments);
         Image image = SwingFXUtils.toFXImage(matrixSegmentation.getSegmentedImage(), null);
         segmentedImageView.setImage(image);
     }
@@ -195,7 +232,7 @@ public class MainController {
     public void manualSegmentation() {
         manualThresholdError.setVisible(false);
         if (manualThresholdValue.getText() != null && !manualThresholdValue.getText().isEmpty()) {
-            thresholdSegmentation.setThreshold(Integer.parseInt(manualThresholdValue.getText()));
+//            thresholdSegmentation.setThreshold(Integer.parseInt(manualThresholdValue.getText()));
             Image image = SwingFXUtils.toFXImage(thresholdSegmentation.segmentation(), null);
             segmentedImageView.setImage(image);
         } else {
@@ -219,10 +256,9 @@ public class MainController {
 
     public void automaticSegmentation() {
         ArrayList<Integer> thresholds = thresholdSegmentation.findThresholds(Integer.parseInt(thresholdVicinity.getText()), Integer.parseInt(thresholdDistance.getText()));
-        String asdf = "";
-        for (int t : thresholds) {
-            asdf = asdf + ", " + t;
-        }
-        detectedThresholds.setText(asdf);
+        detectedThresholds.setText(thresholds.toString());
+
+        Image image = SwingFXUtils.toFXImage(thresholdSegmentation.segmentation(), null);
+        segmentedImageView.setImage(image);
     }
 }

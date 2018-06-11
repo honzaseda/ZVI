@@ -2,18 +2,20 @@ package zvi.ImageProcessing;
 
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Set;
 
 public class ThresholdSegmentation {
     private int[] imageHistogram;
-    private int threshold;
+//    private int threshold;
     private BufferedImage loadedImage;
-    private HashSet<Integer> thresholds;
+    private Set<Integer> thresholds;
 
     public ThresholdSegmentation(BufferedImage imageHandler, boolean filtering) {
         imageHistogram = new int[256];
         loadedImage = imageHandler;
-        thresholds = new HashSet<>();
+        thresholds = new HashSet<Integer>();
         createHistogram(imageHandler);
         if (filtering) {
             filterHistogram();
@@ -28,7 +30,7 @@ public class ThresholdSegmentation {
         thresholds.remove(value);
     }
 
-    public HashSet<Integer> getThresholds(){
+    public Set<Integer> getThresholds(){
         return thresholds;
     }
 
@@ -48,15 +50,19 @@ public class ThresholdSegmentation {
         }
     }
 
-    public void setThreshold(int level) {
-        threshold = level;
-    }
+//    public void setThreshold(int level) {
+//        threshold = level;
+//    }
 
     public BufferedImage segmentation() {
         BufferedImage segmentedImage = new BufferedImage(loadedImage.getWidth(), loadedImage.getHeight(), BufferedImage.TYPE_INT_RGB);
-        System.out.println("Probíhá segmentace s ručním prahováním. Použitý práh: " + threshold);
+        System.out.println("Probíhá segmentace. Použité prahy: " + thresholds);
 
-        findHistogramLocalMaxima(50);
+        int[] sortedThresholds = new int[thresholds.size()];
+        int c = 0;
+        for(int x : thresholds) sortedThresholds[c++] = x;
+        Arrays.sort(sortedThresholds);
+
         BufferedImage loadedGrayscale = ImageHandler.getGrayScaleImage(loadedImage);
 
         for (int x = 0; x < loadedImage.getWidth(); ++x) {
@@ -67,10 +73,11 @@ public class ThresholdSegmentation {
                 int g = (rgb >> 8) & 0xFF;
                 int b = (rgb & 0xFF);
                 int grayLevel = (r + g + b) / 3;
-                if (grayLevel <= threshold) {
-                    segmentedLevel = 0;
-                } else {
-                    segmentedLevel = 255;
+                segmentedLevel = 0;
+                for(int threshold : sortedThresholds){
+                    if (grayLevel > threshold){
+                        segmentedLevel = threshold;
+                    }
                 }
                 int gray = (segmentedLevel << 16) + (segmentedLevel << 8) + segmentedLevel;
                 segmentedImage.setRGB(x, y, gray);
@@ -88,7 +95,7 @@ public class ThresholdSegmentation {
         int[] filteredHistogram = new int[length];
         filteredHistogram[0] = imageHistogram[0];
         for (int i = 2; i < length - 2; i++) {
-            filteredHistogram[i] = (imageHistogram[i - 2] + imageHistogram[i - 1] + imageHistogram[i + 1] + imageHistogram[i + 2] + 2 * imageHistogram[i]) / 6;
+            filteredHistogram[i] = (imageHistogram[i - 2] + imageHistogram[i - 1] + imageHistogram[i + 1] + imageHistogram[i + 2] +  imageHistogram[i]) / 5;
         }
         filteredHistogram[length - 1] = imageHistogram[length - 1];
         imageHistogram = filteredHistogram;
@@ -97,7 +104,9 @@ public class ThresholdSegmentation {
     public ArrayList<Integer> findThresholds(int vicinity, int distance){
         ArrayList<Integer> maxima = findHistogramLocalMaxima(vicinity);
         ArrayList<Integer> thresholds = new ArrayList<>();
+        this.thresholds.clear();
 
+        System.out.println("Found local maxima: " + maxima.toString());
         for (Integer max : maxima) {
 
             if(maxima.indexOf(max) == maxima.size() - 1) break;
@@ -109,6 +118,7 @@ public class ThresholdSegmentation {
             }
             thresholds.add(min);
         }
+        this.thresholds.addAll(thresholds);
 
         return thresholds;
     }
@@ -136,6 +146,17 @@ public class ThresholdSegmentation {
                 }
                 if (isLocalMaxima) {
                     //TODO
+//                    boolean noAdjacentMax = true;
+//                    if(i > 0){
+//                        if(Math.abs(1 - (imageHistogram[max.get(i-1)] / (double)imageHistogram[i])) < 0.2){
+//                            noAdjacentMax = false;
+//                        }
+//                    }
+//                    if(i < ){
+//                        if(Math.abs(1 - (imageHistogram[max.get(i-1)] / (double)imageHistogram[i])) < 0.2){
+//                            noAdjacentMax = false;
+//                        }
+//                    }
                     max.add(i);
                 }
             }
