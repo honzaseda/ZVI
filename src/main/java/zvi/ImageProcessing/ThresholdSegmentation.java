@@ -8,7 +8,7 @@ import java.util.Set;
 
 public class ThresholdSegmentation {
     private int[] imageHistogram;
-//    private int threshold;
+    //    private int threshold;
     private BufferedImage loadedImage;
     private Set<Integer> thresholds;
 
@@ -22,15 +22,15 @@ public class ThresholdSegmentation {
         }
     }
 
-    public void addThreshold(int value){
+    public void addThreshold(int value) {
         thresholds.add(value);
     }
 
-    public void removeThreshold(int value){
+    public void removeThreshold(int value) {
         thresholds.remove(value);
     }
 
-    public Set<Integer> getThresholds(){
+    public Set<Integer> getThresholds() {
         return thresholds;
     }
 
@@ -40,19 +40,15 @@ public class ThresholdSegmentation {
 
     private void createHistogram(BufferedImage image) {
         int imageWidth = image.getWidth();
-        int imageHeigth = image.getHeight();
+        int imageHeight = image.getHeight();
         int[][] pixelsBrightness = ImageHandler.getGrayscaleMap(loadedImage);
 
         for (int x = 0; x < imageWidth; x++) {
-            for (int y = 0; y < imageHeigth; y++) {
+            for (int y = 0; y < imageHeight; y++) {
                 imageHistogram[pixelsBrightness[x][y]]++;
             }
         }
     }
-
-//    public void setThreshold(int level) {
-//        threshold = level;
-//    }
 
     public BufferedImage segmentation() {
         BufferedImage segmentedImage = new BufferedImage(loadedImage.getWidth(), loadedImage.getHeight(), BufferedImage.TYPE_INT_RGB);
@@ -60,7 +56,7 @@ public class ThresholdSegmentation {
 
         int[] sortedThresholds = new int[thresholds.size()];
         int c = 0;
-        for(int x : thresholds) sortedThresholds[c++] = x;
+        for (int x : thresholds) sortedThresholds[c++] = x;
         Arrays.sort(sortedThresholds);
 
         BufferedImage loadedGrayscale = ImageHandler.getGrayScaleImage(loadedImage);
@@ -74,8 +70,8 @@ public class ThresholdSegmentation {
                 int b = (rgb & 0xFF);
                 int grayLevel = (r + g + b) / 3;
                 segmentedLevel = 0;
-                for(int threshold : sortedThresholds){
-                    if (grayLevel > threshold){
+                for (int threshold : sortedThresholds) {
+                    if (grayLevel > threshold) {
                         segmentedLevel = threshold;
                     }
                 }
@@ -93,27 +89,43 @@ public class ThresholdSegmentation {
     private void filterHistogram() {
         int length = imageHistogram.length;
         int[] filteredHistogram = new int[length];
-        filteredHistogram[0] = imageHistogram[0];
+        filteredHistogram[0] = (imageHistogram[0] + imageHistogram[1] + imageHistogram[2]) / 3;
+        filteredHistogram[1] = (imageHistogram[3] + imageHistogram[1] + imageHistogram[2] + imageHistogram[0]) / 4;
+
+        filteredHistogram[length - 1] = (imageHistogram[length - 1] + imageHistogram[length - 2] + imageHistogram[length - 3]) / 3;
+        filteredHistogram[length - 2] = (imageHistogram[length - 3] + imageHistogram[length - 2] + imageHistogram[length - 3] + imageHistogram[length - 1]) / 4;
+
         for (int i = 2; i < length - 2; i++) {
-            filteredHistogram[i] = (imageHistogram[i - 2] + imageHistogram[i - 1] + imageHistogram[i + 1] + imageHistogram[i + 2] +  imageHistogram[i]) / 5;
+            filteredHistogram[i] = (imageHistogram[i - 2] + imageHistogram[i - 1] + imageHistogram[i + 1] + imageHistogram[i + 2] + imageHistogram[i]) / 5;
         }
         filteredHistogram[length - 1] = imageHistogram[length - 1];
         imageHistogram = filteredHistogram;
     }
 
-    public ArrayList<Integer> findThresholds(int vicinity, int distance){
-        ArrayList<Integer> maxima = findHistogramLocalMaxima(vicinity);
-        ArrayList<Integer> thresholds = new ArrayList<>();
+    public ArrayList<Integer> findThresholds(int vicinity, int distance) {
         this.thresholds.clear();
+        ArrayList<Integer> maxima = findHistogramLocalMaxima(vicinity, distance);
+        ArrayList<Integer> thresholds = new ArrayList<>();
 
-        System.out.println("Found local maxima: " + maxima.toString());
+        //TODO co když jenom jedno max
+
         for (Integer max : maxima) {
 
-            if(maxima.indexOf(max) == maxima.size() - 1) break;
+            if (maxima.indexOf(max) == maxima.size() - 1) {
+                break;
+            }
             int min = max;
-            for(int i = max; i < maxima.get(maxima.indexOf(max) + 1);  i++){
-                if(imageHistogram[i] < imageHistogram[min]){
-                    min = i;
+            int center = ((max + maxima.get(maxima.indexOf(max) + 1)) / 2);
+            if (imageHistogram[center] < imageHistogram[min]) {
+                min = center;
+            }
+            for (int i = 0; i < (maxima.get(maxima.indexOf(max) + 1) - max) / 2; i++) {
+                if (imageHistogram[center + i] < imageHistogram[min]) {
+                    min = center + i;
+                }
+
+                if (imageHistogram[center - i] < imageHistogram[min]) {
+                    min = center - i;
                 }
             }
             thresholds.add(min);
@@ -123,12 +135,12 @@ public class ThresholdSegmentation {
         return thresholds;
     }
 
-    private ArrayList<Integer> findHistogramLocalMaxima(int vicinity){
+    private ArrayList<Integer> findHistogramLocalMaxima(int vicinity, int distance) {
         ArrayList<Integer> max = new ArrayList<>();
         int length = imageHistogram.length;
-        for (int i = 0; i < length; i++){
+        for (int i = 0; i < length; i++) {
             boolean isLocalMaxima = true;
-            if(imageHistogram[i] > 0) {
+            if (imageHistogram[i] > 0) {
                 for (int j = 1; j <= vicinity / 2; j++) {
                     if (i - j >= 0) {
                         if (imageHistogram[i] < imageHistogram[i - j]) {
@@ -145,19 +157,17 @@ public class ThresholdSegmentation {
                     }
                 }
                 if (isLocalMaxima) {
-                    //TODO
-//                    boolean noAdjacentMax = true;
-//                    if(i > 0){
-//                        if(Math.abs(1 - (imageHistogram[max.get(i-1)] / (double)imageHistogram[i])) < 0.2){
-//                            noAdjacentMax = false;
-//                        }
-//                    }
-//                    if(i < ){
-//                        if(Math.abs(1 - (imageHistogram[max.get(i-1)] / (double)imageHistogram[i])) < 0.2){
-//                            noAdjacentMax = false;
-//                        }
-//                    }
-                    max.add(i);
+                    //TODO asi lepší hlídat vzdálenost u minim než u maxim
+                    boolean noAdjacent = true;
+                    for (Integer m : max) {
+                        if(Math.abs(m - i) < distance){
+                            noAdjacent = false;
+                        }
+                    }
+
+                    if(noAdjacent) {
+                        max.add(i);
+                    }
                 }
             }
         }

@@ -8,12 +8,14 @@
 <?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.ChoiceBox?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.RadioButton?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.ToggleGroup?>
+<?import javafx.scene.control.ToolBar?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.VBox?>
@@ -35,7 +37,7 @@
         </Menu>
       </menus>
     </MenuBar>
-    <AnchorPane maxHeight="-1.0" maxWidth="-1.0" prefHeight="565.0" prefWidth="772.0" VBox.vgrow="ALWAYS">
+    <AnchorPane maxHeight="-1.0" maxWidth="-1.0" prefHeight="565.0" prefWidth="800.0" VBox.vgrow="ALWAYS">
       <children>
             <AnchorPane layoutX="14.0" layoutY="15.0" style="-fx-background-color: #DBDBDB;">
                <children>
@@ -51,7 +53,7 @@
                <children>
                   <Label text="Metoda segmentace" />
                   <ChoiceBox fx:id="segmentationMethod" layoutY="17.0" prefHeight="25.0" prefWidth="250.0" style="-fx-min-width: 250;" />
-                  <AnchorPane fx:id="manualThresholdOptions" layoutY="48.0" prefHeight="200.0" prefWidth="250.0" style="-fx-background-color: #DBDBDB;" visible="false">
+                  <AnchorPane fx:id="manualThresholdOptions" layoutY="48.0" prefHeight="250.0" prefWidth="250.0" style="-fx-background-color: #DBDBDB;" visible="false">
                      <children>
                         <CheckBox fx:id="filterOption" layoutX="10.0" layoutY="6.0" mnemonicParsing="false" text="Použít filtrování histogramu" />
                         <AnchorPane fx:id="manualThresholdField" layoutX="11.0" layoutY="70.0">
@@ -61,10 +63,11 @@
                               <Label text="Prahy segmentace" />
                               <Button layoutX="115.0" layoutY="17.0" mnemonicParsing="false" onAction="#addManualThreshold" text="Přidat" />
                               <Button layoutX="168.0" layoutY="17.0" mnemonicParsing="false" onAction="#removeManualThreshold" text="Odebrat" />
+                              <ListView fx:id="manualThresholdList" layoutY="47.0" prefHeight="81.0" prefWidth="228.0" />
                            </children>
                         </AnchorPane>
                         <Button fx:id="createHistogram" layoutX="65.0" layoutY="31.0" mnemonicParsing="false" onAction="#createHistogram" text="Vytvořit histogram" />
-                        <Button fx:id="manualSegmentationBtn" layoutX="35.0" layoutY="161.0" mnemonicParsing="false" onAction="#manualSegmentation" text="Ručně prahovaná segmentace" />
+                        <Button fx:id="manualSegmentationBtn" disable="true" layoutX="35.0" layoutY="209.0" mnemonicParsing="false" onAction="#manualSegmentation" text="Ručně prahovaná segmentace" />
                         <Label fx:id="manualThresholdError" alignment="BOTTOM_CENTER" contentDisplay="CENTER" prefHeight="200.0" prefWidth="250.0" textAlignment="CENTER" textFill="#e40000" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
                      </children>
                   </AnchorPane>
@@ -82,18 +85,18 @@
                         <TextField fx:id="matrixSegments" layoutX="14.0" layoutY="88.0" prefHeight="25.0" prefWidth="97.0" />
                      </children>
                   </AnchorPane>
-                  <AnchorPane fx:id="automaticThresholdOptions" layoutY="48.0" prefHeight="200.0" prefWidth="250.0" style="-fx-background-color: #DBDBDB;">
+                  <AnchorPane fx:id="automaticThresholdOptions" layoutY="48.0" prefHeight="250.0" prefWidth="250.0" style="-fx-background-color: #DBDBDB;">
                      <children>
                         <CheckBox fx:id="filterOption" layoutX="10.0" layoutY="6.0" mnemonicParsing="false" text="Použít filtrování histogramu" />
-                        <CheckBox fx:id="normalizeOption1" layoutX="10.0" layoutY="23.0" mnemonicParsing="false" text="Použít normalizování histogramu" />
-                        <Label layoutX="12.0" layoutY="124.0" text="Detekované prahy segmentace" />
-                        <Button fx:id="createHistogram1" layoutX="65.0" layoutY="48.0" mnemonicParsing="false" onAction="#createHistogram" text="Vytvořit histogram" />
-                        <Button layoutX="83.0" layoutY="161.0" mnemonicParsing="false" onAction="#automaticSegmentation" text="segmentace" />
+                        <Label layoutX="12.0" layoutY="108.0" text="Detekované prahy segmentace" />
+                        <Button fx:id="createHistogram1" layoutX="66.0" layoutY="23.0" mnemonicParsing="false" onAction="#createHistogram" text="Vytvořit histogram" />
+                        <Button layoutX="54.0" layoutY="211.0" mnemonicParsing="false" onAction="#automaticSegmentation" text="Automatické prahování" />
                         <Label fx:id="manualThresholdError1" alignment="BOTTOM_CENTER" contentDisplay="CENTER" prefHeight="200.0" prefWidth="250.0" textAlignment="CENTER" textFill="#e40000" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
                         <Label fx:id="detectedThresholds" layoutX="11.0" layoutY="141.0" />
-                        <Label layoutX="12.0" layoutY="73.0" text="Nastavení detekce prahů" />
-                        <TextField fx:id="thresholdVicinity" layoutX="9.0" layoutY="90.0" prefHeight="25.0" prefWidth="97.0" promptText="Oblast maxima" />
-                        <TextField fx:id="thresholdDistance" layoutX="116.0" layoutY="90.0" prefHeight="25.0" prefWidth="87.0" promptText="Vzdálenost" />
+                        <Label layoutX="11.0" layoutY="48.0" text="Nastavení detekce prahů" />
+                        <TextField fx:id="thresholdVicinity" layoutX="11.0" layoutY="65.0" prefHeight="25.0" prefWidth="97.0" promptText="Oblast maxima" />
+                        <TextField fx:id="thresholdDistance" layoutX="116.0" layoutY="65.0" prefHeight="25.0" prefWidth="87.0" promptText="Vzdálenost" />
+                        <ListView fx:id="automaticThresholdList" layoutX="15.0" layoutY="132.0" prefHeight="69.0" prefWidth="228.0" />
                      </children>
                   </AnchorPane>
                </children>
@@ -111,6 +114,11 @@
                   </AreaChart>
                </children>
             </AnchorPane>
+            <ToolBar layoutY="620.0" prefHeight="25.0" prefWidth="800.0">
+               <items>
+                  <Label fx:id="reportDialog" />
+               </items>
+            </ToolBar>
       </children>
     </AnchorPane>
   </children>

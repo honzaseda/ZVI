@@ -3,6 +3,8 @@ package zvi.Controller;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.fxml.FXML;
 import javafx.scene.chart.*;
@@ -17,7 +19,6 @@ import javafx.scene.layout.AnchorPane;
 import javafx.stage.FileChooser;
 import zvi.ImageProcessing.MatrixSegmentation;
 import zvi.ImageProcessing.ThresholdSegmentation;
-import zvi.ImageProcessing.ImageHandler;
 import zvi.Main;
 
 import javax.imageio.ImageIO;
@@ -62,11 +63,16 @@ public class MainController {
     public RadioButton fourNeighbours, eightNeighbours;
 
     @FXML
-    public Label manualThresholdError, detectedThresholds, manualThresholds;
+    public Label manualThresholdError, detectedThresholds, manualThresholds, reportDialog;
+
+    @FXML
+    public ListView manualThresholdList, automaticThresholdList;
 
     private BufferedImage loadedImage;
     private ThresholdSegmentation thresholdSegmentation;
     private MatrixSegmentation matrixSegmentation;
+    private ObservableList<Integer> manualObservableList = FXCollections.observableArrayList();
+    private ObservableList<Integer> automaticObservableList = FXCollections.observableArrayList();
 
     @FXML
     protected void initialize() {
@@ -104,6 +110,19 @@ public class MainController {
                     }
                 }
         );
+
+
+        manualObservableList.addListener(new ListChangeListener() {
+
+            @Override
+            public void onChanged(ListChangeListener.Change change) {
+                if (manualObservableList.size() > 0) {
+                    manualSegmentationBtn.setDisable(false);
+                } else {
+                    manualSegmentationBtn.setDisable(true);
+                }
+            }
+        });
     }
 
     private void drawMethodOptions(int selectedMethod) {
@@ -140,9 +159,10 @@ public class MainController {
             if (loadedFile != null) {
                 loadedImage = ImageIO.read(loadedFile);
 
-                Image image = SwingFXUtils.toFXImage(ImageHandler.getGrayScaleImage(loadedImage), null);
+                Image image = SwingFXUtils.toFXImage(loadedImage, null);
                 loadedImageView.setImage(image);
                 System.out.println("created new image handler from " + loadedImage.toString());
+                System.out.println(image);
             }
         } catch (IOException ex) {
             Logger.getLogger(MainController.class.getName()).log(Level.INFO, "Chyba při načítání souboru.", ex);
@@ -160,22 +180,24 @@ public class MainController {
         }
     }
 
-    public void saveSegmentedFile(){
-        FileChooser fileChooser = new FileChooser();
+    public void saveSegmentedFile() {
+        if (segmentedImageView.getImage() != null) {
+            FileChooser fileChooser = new FileChooser();
 
-        FileChooser.ExtensionFilter extFilterBMP = new FileChooser.ExtensionFilter("Soubory BMP (*.bmp)", "*.BMP");
-        FileChooser.ExtensionFilter extFilterJPG = new FileChooser.ExtensionFilter("Soubory JPG (*.jpg)", "*.JPG *.JPEG");
-        FileChooser.ExtensionFilter extFilterPNG = new FileChooser.ExtensionFilter("Soubory PNG (*.png)", "*.PNG");
-        fileChooser.getExtensionFilters().addAll(extFilterBMP, extFilterJPG, extFilterPNG);
+            FileChooser.ExtensionFilter extFilterBMP = new FileChooser.ExtensionFilter("Soubory BMP (*.bmp)", "*.BMP");
+            FileChooser.ExtensionFilter extFilterJPG = new FileChooser.ExtensionFilter("Soubory JPG (*.jpg)", "*.JPG *.JPEG");
+            FileChooser.ExtensionFilter extFilterPNG = new FileChooser.ExtensionFilter("Soubory PNG (*.png)", "*.PNG");
+            fileChooser.getExtensionFilters().addAll(extFilterBMP, extFilterJPG, extFilterPNG);
 
-        fileChooser.setTitle("Otevřít soubor");
-        File saveFile = fileChooser.showSaveDialog(Main.parentWindow);
-        if (saveFile != null) {
-            try {
-                ImageIO.write(SwingFXUtils.fromFXImage(segmentedImageView.getImage(),
-                        null), "png", saveFile);
-            } catch (IOException ex) {
+            fileChooser.setTitle("Uložit segmentovaný obraz");
+            File saveFile = fileChooser.showSaveDialog(Main.parentWindow);
+            if (saveFile != null) {
+                try {
+                    ImageIO.write(SwingFXUtils.fromFXImage(segmentedImageView.getImage(),
+                            null), "png", saveFile);
+                } catch (IOException ex) {
 
+                }
             }
         }
     }
@@ -214,12 +236,11 @@ public class MainController {
         try {
             if (Integer.parseInt(matrixSegments.getText()) >= 2) {
                 segments = Integer.parseInt(matrixSegments.getText());
-            }
-            else {
+            } else {
                 System.out.println("Neplatný parametr. Bude použito základní nastavení na 3 segmenty.");
+                reportDialog.setText("Neplatný parametr. Bude použito základní nastavení na 3 segmenty.");
             }
-        }
-        catch (Exception e){
+        } catch (Exception e) {
 
         }
 
@@ -230,33 +251,60 @@ public class MainController {
 
     @FXML
     public void manualSegmentation() {
-        manualThresholdError.setVisible(false);
         if (manualThresholdValue.getText() != null && !manualThresholdValue.getText().isEmpty()) {
 //            thresholdSegmentation.setThreshold(Integer.parseInt(manualThresholdValue.getText()));
             Image image = SwingFXUtils.toFXImage(thresholdSegmentation.segmentation(), null);
             segmentedImageView.setImage(image);
         } else {
-            manualThresholdError.setText("Nebyl zadán práh segmentace");
-            manualThresholdError.setVisible(true);
+            reportDialog.setText("Nebyl zadán práh segmentace");
         }
 
     }
 
     @FXML
-    public void addManualThreshold(){
+    public void addManualThreshold() {
         thresholdSegmentation.addThreshold(Integer.parseInt(manualThresholdValue.getText()));
-        manualThresholds.setText(thresholdSegmentation.getThresholds().toString());
+//        manualThresholds.setText(thresholdSegmentation.getThresholds().toString());
+        manualObservableList.setAll(thresholdSegmentation.getThresholds());
+        manualThresholdList.setItems(manualObservableList);
     }
 
     @FXML
-    public void removeManualThreshold(){
+    public void removeManualThreshold() {
         thresholdSegmentation.removeThreshold(Integer.parseInt(manualThresholdValue.getText()));
-        manualThresholds.setText(thresholdSegmentation.getThresholds().toString());
+        manualObservableList.setAll(thresholdSegmentation.getThresholds());
+        manualThresholdList.setItems(manualObservableList);
     }
 
     public void automaticSegmentation() {
-        ArrayList<Integer> thresholds = thresholdSegmentation.findThresholds(Integer.parseInt(thresholdVicinity.getText()), Integer.parseInt(thresholdDistance.getText()));
-        detectedThresholds.setText(thresholds.toString());
+        int segments = Integer.parseInt(thresholdDistance.getText());  //ne thresholddistance ale počet segmentů
+        int maxVicinity = Integer.parseInt(thresholdVicinity.getText());
+        int distance = 256 / segments;
+        ArrayList<Integer> t;
+        boolean smallerVicinity = false;
+        do {
+            //System.out.println("Hledání prahů s vzdáleností " + distance);
+            t = thresholdSegmentation.findThresholds(maxVicinity, distance);
+
+            distance = distance - 10;
+
+            if (distance < 10) {
+                if(!smallerVicinity) {
+                    maxVicinity = maxVicinity / 2;
+                    distance = 256 / segments;
+                    smallerVicinity = true;
+                }
+                else{
+                    break;
+                }
+            }
+        } while (t.size() != segments - 1);
+        if(t.size() != segments - 1){
+            System.out.println("Pro zadaný počet segmentů se nepodařilo nalézt prahy. Nalezený počet segmentů: " + t.size());
+            reportDialog.setText("Pro zadaný počet segmentů se nepodařilo nalézt prahy Nalezený počet segmentů: " + t.size());
+        }
+        automaticObservableList.setAll(thresholdSegmentation.getThresholds());
+        automaticThresholdList.setItems(automaticObservableList);
 
         Image image = SwingFXUtils.toFXImage(thresholdSegmentation.segmentation(), null);
         segmentedImageView.setImage(image);

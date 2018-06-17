@@ -1,5 +1,6 @@
 package zvi.ImageProcessing;
 
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 
@@ -8,12 +9,12 @@ public class ImageHandler {
     public static BufferedImage getGrayScaleImage(BufferedImage image) {
         for (int x = 0; x < image.getWidth(); x++) {
             for (int y = 0; y < image.getHeight(); y++) {
-                int rgb = image.getRGB(x, y);
-                int r = (rgb >> 16) & 0xFF;
-                int g = (rgb >> 8) & 0xFF;
-                int b = (rgb & 0xFF);
+                Color pixelColor = new Color(image.getRGB(x, y));
+                int r = pixelColor.getRed();
+                int g = pixelColor.getGreen();
+                int b = pixelColor.getBlue();
                 int grayLevel = (r + g + b) / 3;
-                int gray = (grayLevel << 16) + (grayLevel << 8) + grayLevel;
+                int gray = (grayLevel << 16) | (grayLevel << 8) | grayLevel;
                 image.setRGB(x, y, gray);
             }
         }
@@ -25,13 +26,16 @@ public class ImageHandler {
         int imageHeight = image.getHeight();
         int[][] pixels = new int[imageWidth][imageHeight];
 
-        DataBufferByte db = (DataBufferByte) image.getRaster().getDataBuffer();
-        byte[] pixelarray = db.getData();
         for (int x = 0; x < imageWidth; x++) {
             for (int y = 0; y < imageHeight; y++) {
-                pixels[x][y] = pixelarray[x + y * imageWidth] & 0xFF;
+                Color pixelColor = new Color(image.getRGB(x, y));
+                int r = pixelColor.getRed();
+                int g = pixelColor.getGreen();
+                int b = pixelColor.getBlue();
+                pixels[x][y] = (r + g + b) / 3;
             }
         }
+
         return pixels;
     }
 
