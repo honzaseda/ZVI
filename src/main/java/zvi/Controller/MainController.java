@@ -6,7 +6,11 @@ import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.embed.swing.SwingFXUtils;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
 import javafx.scene.control.Button;
@@ -15,8 +19,15 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import zvi.ImageProcessing.ImageHandler;
 import zvi.ImageProcessing.MatrixSegmentation;
 import zvi.ImageProcessing.ThresholdSegmentation;
 import zvi.Main;
@@ -39,28 +50,25 @@ public class MainController {
     public ImageView loadedImageView, segmentedImageView;
 
     @FXML
-    public AreaChart histogramChart;
-
-    @FXML
     public ChoiceBox segmentationMethod;
 
     @FXML
-    public AnchorPane manualThresholdOptions, matrixOptions, automaticThresholdOptions, manualThresholdField;
+    public AnchorPane manualThresholdOptions, recoloringOptions, automaticThresholdOptions, sequentialOptions, manualThresholdField, histogramPane, oneDirectionOptions;
 
     @FXML
-    public CheckBox filterOption, normalizeOption;
+    public CheckBox automaticFilterOption, manualFilterOption, automaticReferenceBrightness;
 
     @FXML
-    public TextField manualThresholdValue, thresholdVicinity, thresholdDistance, matrixSegments;
+    public TextField manualThresholdValue, thresholdSegments, matrixSegments, referenceBrightness, sequentialDepth;
 
     @FXML
     public Button createHistogram, matrixSegmentationBtn, manualSegmentationBtn;
 
     @FXML
-    public ToggleGroup neighbours;
+    public ToggleGroup neighbours, direction, oneDirectionOption;
 
     @FXML
-    public RadioButton fourNeighbours, eightNeighbours;
+    public RadioButton fourNeighbours, eightNeighbours, bothDirection, oneDirection, oneDirectionBrighten, oneDirectionDarken;
 
     @FXML
     public Label manualThresholdError, detectedThresholds, manualThresholds, reportDialog;
@@ -68,6 +76,7 @@ public class MainController {
     @FXML
     public ListView manualThresholdList, automaticThresholdList;
 
+    private String fileName;
     private BufferedImage loadedImage;
     private ThresholdSegmentation thresholdSegmentation;
     private MatrixSegmentation matrixSegmentation;
@@ -81,6 +90,12 @@ public class MainController {
 
         fourNeighbours.setUserData("four");
         eightNeighbours.setUserData("eight");
+
+        bothDirection.setUserData("both");
+        oneDirection.setUserData("one");
+
+        oneDirectionBrighten.setUserData("brighten");
+        oneDirectionDarken.setUserData("darken");
 
 
         //-- Events
@@ -111,6 +126,24 @@ public class MainController {
                 }
         );
 
+        automaticReferenceBrightness.selectedProperty().addListener(new ChangeListener<Boolean>() {
+            @Override
+            public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
+                referenceBrightness.setDisable(newValue);
+            }
+        });
+
+        direction.selectedToggleProperty().addListener(new ChangeListener<Toggle>() {
+            @Override
+            public void changed(ObservableValue<? extends Toggle> observable, Toggle oldValue, Toggle newValue) {
+                if(newValue == oneDirection){
+                    oneDirectionOptions.setVisible(true);
+                }
+                else {
+                    oneDirectionOptions.setVisible(false);
+                }
+            }
+        });
 
         manualObservableList.addListener(new ListChangeListener() {
 
@@ -123,12 +156,15 @@ public class MainController {
                 }
             }
         });
+
+
     }
 
     private void drawMethodOptions(int selectedMethod) {
         automaticThresholdOptions.setVisible(false);
         manualThresholdOptions.setVisible(false);
-        matrixOptions.setVisible(false);
+        recoloringOptions.setVisible(false);
+        sequentialOptions.setVisible(false);
         switch (selectedMethod) {
             case 0:
                 automaticThresholdOptions.setVisible(true);
@@ -137,9 +173,13 @@ public class MainController {
                 manualThresholdOptions.setVisible(true);
                 break;
             case 2:
-                matrixOptions.setVisible(true);
+                recoloringOptions.setVisible(true);
                 break;
             case 3:
+                sequentialOptions.setVisible(true);
+                break;
+            default:
+                automaticThresholdOptions.setVisible(true);
                 break;
         }
     }
@@ -158,11 +198,12 @@ public class MainController {
         try {
             if (loadedFile != null) {
                 loadedImage = ImageIO.read(loadedFile);
-
+                fileName = loadedFile.getName();
                 Image image = SwingFXUtils.toFXImage(loadedImage, null);
                 loadedImageView.setImage(image);
-                System.out.println("created new image handler from " + loadedImage.toString());
-                System.out.println(image);
+
+                System.out.println("Otevřen obázek " + fileName + " ze zdroje: " + loadedImage.toString());
+                reportDialog.setText("Otevřen obrázek " + fileName);
             }
         } catch (IOException ex) {
             Logger.getLogger(MainController.class.getName()).log(Level.INFO, "Chyba při načítání souboru.", ex);
@@ -176,7 +217,8 @@ public class MainController {
             Desktop dt = Desktop.getDesktop();
             dt.open(f);
         } catch (IOException e) {
-            //empty try catch lul
+            System.out.println("Nelze zobrazit náhled obrázku. Nepodařilo se otevřít systémový prohlížeč obrázků.");
+            reportDialog.setText("Nelze zobrazit náhled obrázku. Nepodařilo se otevřít systémový prohlížeč obrázků");
         }
     }
 
@@ -190,69 +232,143 @@ public class MainController {
             fileChooser.getExtensionFilters().addAll(extFilterBMP, extFilterJPG, extFilterPNG);
 
             fileChooser.setTitle("Uložit segmentovaný obraz");
+            fileChooser.setInitialFileName(fileName + "-segmented");
             File saveFile = fileChooser.showSaveDialog(Main.parentWindow);
             if (saveFile != null) {
                 try {
                     ImageIO.write(SwingFXUtils.fromFXImage(segmentedImageView.getImage(),
                             null), "png", saveFile);
                 } catch (IOException ex) {
-
+                    System.out.println("Nepodařilo se uložit segmentovaný obraz.");
+                    reportDialog.setText("Nepodařilo se uložit segmentovaný obraz.");
                 }
             }
+        } else {
+            reportDialog.setText("Není segmentován žádný obrázek");
         }
     }
 
     public void createHistogram() {
-        thresholdSegmentation = new ThresholdSegmentation(loadedImage, filterOption.isSelected());
-        drawHistogramChart(thresholdSegmentation.getImageHistogram());
-        segmentedImageView.setImage(null);
-        histogramChart.setVisible(true);
+        if (loadedImageView.getImage() != null) {
+            boolean filter = true;
+            if(manualThresholdOptions.isVisible()){
+                filter = manualFilterOption.isSelected();
+            }
+            else if(automaticThresholdOptions.isVisible()) {
+                filter = automaticFilterOption.isSelected();
+            }
+            manualThresholdList.setItems(null);
+            automaticThresholdList.setItems(null);
+            thresholdSegmentation = new ThresholdSegmentation(loadedImage, filter);
+            drawHistogramChart(thresholdSegmentation.getImageHistogram());
+            segmentedImageView.setImage(null);
+        } else {
+            System.out.println("Nelze vytvořit histogram. Není načten výchozí obrázek.");
+            reportDialog.setText("Nelze vytvořit histogram. Není načten výchozí obrázek.");
+        }
     }
 
     private void drawHistogramChart(int[] histogramValues) {
 
+        final NumberAxis xAxis = new NumberAxis(0, 255, 20);
+        final NumberAxis yAxis = new NumberAxis();
+        AreaChart<Number, Number> histogram = new AreaChart<Number, Number>(xAxis, yAxis);
+        histogram.setCreateSymbols(false);
+        histogram.prefHeight(200);
+        histogram.prefWidth(500);
+        histogram.setMaxHeight(200);
+        xAxis.setLabel(null);
+        histogram.setLegendVisible(false);
 
-        final XYChart.Series<String, Number> histogramSeries = new XYChart.Series<String, Number>();
-        histogramChart.getData().clear();
+
+        final XYChart.Series<Number, Number> histogramSeries = new XYChart.Series<Number, Number>();
         for (int i = 0; i < histogramValues.length; i++) {
-            histogramSeries.getData().add(new XYChart.Data<String, Number>(Integer.toString(i), histogramValues[i]));
+            histogramSeries.getData().add(new XYChart.Data<Number, Number>(i, histogramValues[i]));
         }
-        histogramChart.setData(FXCollections.observableArrayList(histogramSeries));
+        histogram.setData(FXCollections.observableArrayList(histogramSeries));
+
+
+        histogramPane.getChildren().set(0, histogram);
+
+        //ZOOMING
+
+        final double SCALE_DELTA = 1.1;
+        histogram.setOnScroll(new EventHandler<ScrollEvent>() {
+            public void handle(ScrollEvent event) {
+                event.consume();
+
+                if (event.getDeltaY() == 0) {
+                    return;
+                }
+
+                double scaleFactor = (event.getDeltaY() > 0) ? SCALE_DELTA : 1 / SCALE_DELTA;
+                yAxis.setAutoRanging(false);
+                yAxis.setLowerBound(0);
+                yAxis.setUpperBound(yAxis.getUpperBound() * scaleFactor);
+                yAxis.setTickUnit(yAxis.getUpperBound() / 20);
+//                histogramChart.setScaleY(histogramChart.getScaleY() * scaleFactor);
+
+            }
+        });
+
+        histogram.setOnMousePressed(new EventHandler<MouseEvent>() {
+            public void handle(MouseEvent event) {
+                if (event.getClickCount() == 2) {
+                    yAxis.setAutoRanging(true);
+//                    histogramChart.setScaleX(1.0);
+                }
+            }
+        });
     }
 
-    public void matrixSegmentation() {
-        segmentedImageView.setImage(null);
-        histogramChart.setVisible(false);
-        boolean useAllNeighbours = true;
+    public void recoloringSegmentation() {
+        if (loadedImageView.getImage() != null) {
+            segmentedImageView.setImage(null);
+//        histogramChart.setVisible(false);
+            try {
+                histogramPane.getChildren().set(0, new Pane());
+            } catch (IndexOutOfBoundsException e) {
 
-        if (neighbours.getSelectedToggle() != null) {
-            if (neighbours.getSelectedToggle().getUserData().toString().equals("four")) {
-                useAllNeighbours = false;
             }
-        }
+            boolean useAllNeighbours = true;
 
-
-        int segments = 3;
-        try {
-            if (Integer.parseInt(matrixSegments.getText()) >= 2) {
-                segments = Integer.parseInt(matrixSegments.getText());
-            } else {
-                System.out.println("Neplatný parametr. Bude použito základní nastavení na 3 segmenty.");
-                reportDialog.setText("Neplatný parametr. Bude použito základní nastavení na 3 segmenty.");
+            if (neighbours.getSelectedToggle() != null) {
+                if (neighbours.getSelectedToggle().getUserData().toString().equals("four")) {
+                    useAllNeighbours = false;
+                }
             }
-        } catch (Exception e) {
 
+
+            int segments = 3;
+            try {
+                if (Integer.parseInt(matrixSegments.getText()) >= 2) {
+                    segments = Integer.parseInt(matrixSegments.getText());
+                } else {
+                    System.out.println("Neplatný parametr. Bude použito základní nastavení na 3 segmenty.");
+                    reportDialog.setText("Neplatný parametr. Bude použito základní nastavení na 3 segmenty.");
+                }
+            } catch (Exception e) {
+
+            }
+
+            System.out.println("Probíhá segmentace přebarvováním. Počet segmentů: " + segments);
+            reportDialog.setText("Probíhá segmentace přebarvováním. Počet segmentů: " + segments);
+            matrixSegmentation = new MatrixSegmentation(loadedImage, segments);
+            matrixSegmentation.createAdjacencyMatrix(useAllNeighbours);
+            matrixSegmentation.recoloringSegmentation();
+//            Image image = SwingFXUtils.toFXImage(ImageHandler.getGrayScaleImage(loadedImage), null);
+            Image image = SwingFXUtils.toFXImage(matrixSegmentation.getSegmentedImage(), null);
+            segmentedImageView.setImage(image);
+        } else {
+            System.out.println("Nelze spustit segmentaci. Není načten výchozí obrázek.");
+            reportDialog.setText("Nelze spustit segmentaci. Není načten výchozí obrázek.");
         }
-
-        matrixSegmentation = new MatrixSegmentation(loadedImage, useAllNeighbours, segments);
-        Image image = SwingFXUtils.toFXImage(matrixSegmentation.getSegmentedImage(), null);
-        segmentedImageView.setImage(image);
     }
 
     @FXML
     public void manualSegmentation() {
-        if (manualThresholdValue.getText() != null && !manualThresholdValue.getText().isEmpty()) {
-//            thresholdSegmentation.setThreshold(Integer.parseInt(manualThresholdValue.getText()));
+        if (thresholdSegmentation.getThresholds() != null) {
+            reportDialog.setText("Probíhá segmentace ručním prahováním.");
             Image image = SwingFXUtils.toFXImage(thresholdSegmentation.segmentation(), null);
             segmentedImageView.setImage(image);
         } else {
@@ -263,50 +379,219 @@ public class MainController {
 
     @FXML
     public void addManualThreshold() {
-        thresholdSegmentation.addThreshold(Integer.parseInt(manualThresholdValue.getText()));
-//        manualThresholds.setText(thresholdSegmentation.getThresholds().toString());
-        manualObservableList.setAll(thresholdSegmentation.getThresholds());
-        manualThresholdList.setItems(manualObservableList);
+        try {
+            try {
+                int threshold = Integer.parseInt(manualThresholdValue.getText());
+                if (threshold >= 0 && threshold <= 255) {
+                    thresholdSegmentation.addThreshold(Integer.parseInt(manualThresholdValue.getText()));
+                    manualObservableList.setAll(thresholdSegmentation.getThresholds());
+                    FXCollections.sort(manualObservableList);
+                    manualThresholdList.setItems(manualObservableList);
+                } else {
+                    System.out.println("Nelze přidat práh, neplatná hodnota.");
+                    reportDialog.setText("Nelze přidat práh, neplatná hodnota.");
+                }
+            } catch (Exception e) {
+                System.out.println("Nelze přidat práh, neplatná hodnota.");
+                reportDialog.setText("Nelze přidat práh, neplatná hodnota.");
+            }
+
+        } catch (NullPointerException e) {
+            System.out.println("Nelze přidat práh, nebyl vytvořen histogram.");
+            reportDialog.setText("Nelze přidat práh, nebyl vytvořen histogram.");
+        }
     }
 
     @FXML
     public void removeManualThreshold() {
-        thresholdSegmentation.removeThreshold(Integer.parseInt(manualThresholdValue.getText()));
-        manualObservableList.setAll(thresholdSegmentation.getThresholds());
-        manualThresholdList.setItems(manualObservableList);
+        try {
+            thresholdSegmentation.removeThreshold(Integer.parseInt(manualThresholdValue.getText()));
+            manualObservableList.setAll(thresholdSegmentation.getThresholds());
+            FXCollections.sort(manualObservableList);
+            manualThresholdList.setItems(manualObservableList);
+        } catch (NullPointerException e) {
+            System.out.println("Nelze odebrat práh, nebyl vytvořen histogram.");
+            reportDialog.setText("Nelze odebrat práh, nebyl vytvořen histogram");
+        }
     }
 
     public void automaticSegmentation() {
-        int segments = Integer.parseInt(thresholdDistance.getText());  //ne thresholddistance ale počet segmentů
-        int maxVicinity = Integer.parseInt(thresholdVicinity.getText());
+        int segments = Integer.parseInt(thresholdSegments.getText());
+        int maxVicinity = ImageHandler.getMaximumVicinity();
         int distance = 256 / segments;
         ArrayList<Integer> t;
         boolean smallerVicinity = false;
+        reportDialog.setText("Probíhá segmentace automatickým prahováním. Počet zadaných segmentů: " + segments);
         do {
-            //System.out.println("Hledání prahů s vzdáleností " + distance);
-            t = thresholdSegmentation.findThresholds(maxVicinity, distance);
+            t = thresholdSegmentation.findThresholds(distance);
 
             distance = distance - 10;
-
             if (distance < 10) {
-                if(!smallerVicinity) {
+                if (!smallerVicinity) {
                     maxVicinity = maxVicinity / 2;
                     distance = 256 / segments;
                     smallerVicinity = true;
-                }
-                else{
+                } else {
                     break;
                 }
             }
         } while (t.size() != segments - 1);
-        if(t.size() != segments - 1){
-            System.out.println("Pro zadaný počet segmentů se nepodařilo nalézt prahy. Nalezený počet segmentů: " + t.size());
-            reportDialog.setText("Pro zadaný počet segmentů se nepodařilo nalézt prahy Nalezený počet segmentů: " + t.size());
-        }
-        automaticObservableList.setAll(thresholdSegmentation.getThresholds());
-        automaticThresholdList.setItems(automaticObservableList);
+        if (t.size() == 0) {
+            System.out.println("V histogramu obrázku nebyl nalezen žádný možný práh.");
+            reportDialog.setText("V histogramu obrázku nebyl nalezen žádný možný práh.");
+        } else {
+            if (t.size() != segments - 1) {
+                System.out.println("Pro zadaný počet segmentů se nepodařilo nalézt prahy. Nalezený počet segmentů: " + (t.size() + 1));
+                reportDialog.setText("Pro zadaný počet segmentů se nepodařilo nalézt prahy. Nalezený počet segmentů: " + (t.size() + 1));
+            }
+            automaticObservableList.setAll(thresholdSegmentation.getThresholds());
+            FXCollections.sort(automaticObservableList);
+            automaticThresholdList.setItems(automaticObservableList);
 
-        Image image = SwingFXUtils.toFXImage(thresholdSegmentation.segmentation(), null);
-        segmentedImageView.setImage(image);
+            Image image = SwingFXUtils.toFXImage(thresholdSegmentation.segmentation(), null);
+            segmentedImageView.setImage(image);
+        }
+    }
+
+
+    public void sequentialRecolorizing() {
+        if (loadedImageView.getImage() != null) {
+            segmentedImageView.setImage(null);
+//        histogramChart.setVisible(false);
+            try {
+                histogramPane.getChildren().set(0, new Pane());
+            } catch (IndexOutOfBoundsException e) {
+
+            }
+            boolean useBothDirections = true;
+
+            if (direction.getSelectedToggle() != null) {
+                if (direction.getSelectedToggle().getUserData().toString().equals("one")) {
+                    useBothDirections = false;
+                }
+            }
+
+            int r = -1;
+            int k = -1;
+
+            try {
+                if(automaticReferenceBrightness.isSelected()){
+                    r = 255;
+                }
+                else {
+                    r = Integer.parseInt(referenceBrightness.getText());
+                }
+                k = Integer.parseInt(sequentialDepth.getText());
+            } catch (Exception e) {
+                System.out.println("Zadané neplatné parametry rozplavu.");
+                reportDialog.setText("Zadané neplatné parametry rozplavu.");
+            }
+
+
+
+            if (r >= 0 && r <= 255 && k >= 0 && k <= 255) {
+                System.out.println("Probíhá segmentace rozplavováním.");
+                reportDialog.setText("Probíhá segmentace rozplavováním.");
+                matrixSegmentation = new MatrixSegmentation(loadedImage, 0);
+
+                if(!useBothDirections){
+                    matrixSegmentation.setBrighten(oneDirectionOption.getSelectedToggle().getUserData().toString().equals("brighten"));
+                }
+                matrixSegmentation.sequentialRecoloringSegmentation(useBothDirections, r, k, automaticReferenceBrightness.isSelected());
+
+                Image image = SwingFXUtils.toFXImage(matrixSegmentation.getSegmentedImage(), null);
+                segmentedImageView.setImage(image);
+            } else {
+                System.out.println("Zadané neplatné parametry rozplavu.");
+                reportDialog.setText("Zadané neplatné parametry rozplavu.");
+            }
+        } else {
+            System.out.println("Nelze spustit segmentaci. Není načten výchozí obrázek.");
+            reportDialog.setText("Nelze spustit segmentaci. Není načten výchozí obrázek.");
+        }
+    }
+
+    @FXML
+    private void openHelp() {
+        Label text = new Label();
+        text.setText("O programu \n\n Segmentace snímků III – automatické prahování podle tvaru histogramu pro lokální " +
+                "minima a maxima na definovaný počet prahů, ověření vlastností metody s užitím filtrace histogramu, " +
+                "metody založené na matici sousednosti a rozplavování (+ ruční prahování).\n");
+        text.setMaxWidth(450);
+        text.setWrapText(true);
+        text.wrapTextProperty();
+        BorderPane pane = new BorderPane();
+        pane.setCenter(text);
+        Scene scene = new Scene(pane);
+        pane.setMinHeight(150);
+        pane.setMinWidth(500);
+
+        Stage openHelpStage = new Stage();
+        openHelpStage.setScene(scene);
+        openHelpStage.setMinWidth(520);
+        openHelpStage.setMinHeight(180);
+        openHelpStage.setTitle("O programu");
+
+        openHelpStage.setOnCloseRequest(
+                e -> {
+                    e.consume();
+                    openHelpStage.close();
+                }
+        );
+        openHelpStage.showAndWait();
+    }
+
+    @FXML
+    private void openSetMax() {
+        VBox pane = new VBox();
+
+        Label text = new Label("Nastavení velikosti oblasti (2 - 32) v histogramu, ve kterém je jas lokálním maximem.");
+        text.setWrapText(true);
+        text.setPrefWidth(320);
+
+        String defaultValue = Integer.toString(ImageHandler.getMaximumVicinity());
+        TextField textField = new TextField();
+        textField.setText(defaultValue);
+        textField.setMaxWidth(100);
+
+        Button save = new Button();
+        save.setText("Uložit nastavení");
+
+
+        Scene scene = new Scene(pane);
+        pane.setPrefWidth(320);
+        pane.setPadding(new Insets(20, 20, 20, 20));
+        pane.setSpacing(10);
+        pane.setAlignment(Pos.CENTER);
+
+        pane.getChildren().addAll(text, textField, save);
+
+        Stage openSetMaxStage = new Stage();
+        openSetMaxStage.setScene(scene);
+        openSetMaxStage.setMinWidth(320);
+        openSetMaxStage.setMinHeight(120);
+        openSetMaxStage.setTitle("Nastavení hledání maxima");
+
+        save.setOnAction(event -> {
+            try {
+                int max = Integer.parseInt(textField.getText());
+                if (max > 1 && max < 33) {
+                    ImageHandler.setMaximumVicinity(max);
+                }
+            } catch (Exception e) {
+                System.out.println("Neplatná hodnota nastavení.");
+            } finally {
+                event.consume();
+                openSetMaxStage.close();
+            }
+        });
+
+        openSetMaxStage.setOnCloseRequest(
+                e -> {
+                    e.consume();
+                    openSetMaxStage.close();
+                }
+        );
+        openSetMaxStage.showAndWait();
     }
 }

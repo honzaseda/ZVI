@@ -52,12 +52,12 @@ public class ThresholdSegmentation {
 
     public BufferedImage segmentation() {
         BufferedImage segmentedImage = new BufferedImage(loadedImage.getWidth(), loadedImage.getHeight(), BufferedImage.TYPE_INT_RGB);
-        System.out.println("Probíhá segmentace. Použité prahy: " + thresholds);
 
         int[] sortedThresholds = new int[thresholds.size()];
         int c = 0;
         for (int x : thresholds) sortedThresholds[c++] = x;
         Arrays.sort(sortedThresholds);
+        System.out.println("Probíhá segmentace. Použité prahy: " + thresholds);
 
         BufferedImage loadedGrayscale = ImageHandler.getGrayScaleImage(loadedImage);
 
@@ -70,9 +70,14 @@ public class ThresholdSegmentation {
                 int b = (rgb & 0xFF);
                 int grayLevel = (r + g + b) / 3;
                 segmentedLevel = 0;
-                for (int threshold : sortedThresholds) {
-                    if (grayLevel > threshold) {
-                        segmentedLevel = threshold;
+                for(int i = 0; i < thresholds.size(); i++){
+                    if (grayLevel > sortedThresholds[i]){
+                        if (i == thresholds.size() - 1){
+                            segmentedLevel = 255;
+                        }
+                        else {
+                            segmentedLevel = sortedThresholds[i];
+                        }
                     }
                 }
                 int gray = (segmentedLevel << 16) + (segmentedLevel << 8) + segmentedLevel;
@@ -102,9 +107,9 @@ public class ThresholdSegmentation {
         imageHistogram = filteredHistogram;
     }
 
-    public ArrayList<Integer> findThresholds(int vicinity, int distance) {
+    public ArrayList<Integer> findThresholds(int distance) {
         this.thresholds.clear();
-        ArrayList<Integer> maxima = findHistogramLocalMaxima(vicinity, distance);
+        ArrayList<Integer> maxima = findHistogramLocalMaxima(distance);
         ArrayList<Integer> thresholds = new ArrayList<>();
 
         //TODO co když jenom jedno max
@@ -135,13 +140,13 @@ public class ThresholdSegmentation {
         return thresholds;
     }
 
-    private ArrayList<Integer> findHistogramLocalMaxima(int vicinity, int distance) {
+    private ArrayList<Integer> findHistogramLocalMaxima(int distance) {
         ArrayList<Integer> max = new ArrayList<>();
         int length = imageHistogram.length;
         for (int i = 0; i < length; i++) {
             boolean isLocalMaxima = true;
             if (imageHistogram[i] > 0) {
-                for (int j = 1; j <= vicinity / 2; j++) {
+                for (int j = 1; j <= ImageHandler.getMaximumVicinity() / 2; j++) {
                     if (i - j >= 0) {
                         if (imageHistogram[i] < imageHistogram[i - j]) {
                             isLocalMaxima = false;

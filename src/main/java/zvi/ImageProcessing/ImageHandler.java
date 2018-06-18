@@ -6,6 +6,18 @@ import java.awt.image.DataBufferByte;
 
 public class ImageHandler {
 
+    public static int getMaximumVicinity() {
+        return maximumVicinity;
+    }
+
+    public static void setMaximumVicinity(int maximumVicinity) {
+        ImageHandler.maximumVicinity = maximumVicinity;
+    }
+
+    private static int maximumVicinity = 20;
+
+
+
     public static BufferedImage getGrayScaleImage(BufferedImage image) {
         for (int x = 0; x < image.getWidth(); x++) {
             for (int y = 0; y < image.getHeight(); y++) {

@@ -1,5 +1,6 @@
 package zvi.ImageProcessing;
 
+import java.awt.*;
 import java.awt.image.BufferedImage;
 
 public class MatrixSegmentation {
@@ -9,8 +10,18 @@ public class MatrixSegmentation {
     private BufferedImage segmentedImage;
     private int[][] grayscaleMap;
 
+    public boolean isBrighten() {
+        return brighten;
+    }
 
-    public MatrixSegmentation(BufferedImage image, boolean useDiagNeighbours, int segments) {
+    public void setBrighten(boolean brighten) {
+        this.brighten = brighten;
+    }
+
+    public boolean brighten = true;
+
+
+    public MatrixSegmentation(BufferedImage image, int segments) {
         loadedImage = image;
         int imageWidth = loadedImage.getWidth();
         int imageHeight = loadedImage.getHeight();
@@ -21,8 +32,7 @@ public class MatrixSegmentation {
         segmentedImage = new BufferedImage(imageWidth, imageHeight, BufferedImage.TYPE_INT_RGB);
         grayscaleMap = ImageHandler.getGrayscaleMap(loadedImage);
 
-        createAdjacencyMatrix(useDiagNeighbours);
-        recoloringSegmentation();
+
     }
 
     public BufferedImage getSegmentedImage(){
@@ -30,7 +40,7 @@ public class MatrixSegmentation {
         return segmentedImage;
     }
 
-    private void createAdjacencyMatrix(boolean useDiagNeighbours) {
+    public void createAdjacencyMatrix(boolean useDiagNeighbours) {
         int imageWidth = loadedImage.getWidth();
         int imageHeight = loadedImage.getHeight();
         int[][] imagePixels = grayscaleMap;
@@ -69,7 +79,7 @@ public class MatrixSegmentation {
         }
     }
 
-    private void recoloringSegmentation() {
+    public void recoloringSegmentation() {
         int minIndex = findDiagMin();
         int maxNeighbour = getMaxNeighbour(minIndex);
         for (int i = 0; i < 256; i++) {
@@ -161,5 +171,43 @@ public class MatrixSegmentation {
                 segmentedImage.setRGB(x, y, gray);
             }
         }
+    }
+
+    public int getReferenceBrightness(int index){
+        int r = 255;
+        for(int i = 0; i < segmentedImage.getWidth(); i++){
+            if(grayscaleMap[i][index] < r){
+                r = grayscaleMap[i][index];
+            }
+        }
+        return r;
+    }
+
+    public void sequentialRecoloringSegmentation(boolean bothDirections, int r, int k, boolean findR){
+        for(int y = 0; y < segmentedImage.getHeight(); y++){
+            if(findR){
+                r = getReferenceBrightness(y);
+            }
+            for (int x = 0; x < segmentedImage.getWidth(); x++){
+                if(bothDirections){
+                    if(Math.abs(grayscaleMap[x][y] - r) <= k){
+                        grayscaleMap[x][y] = r;
+                    }
+                }
+                else {
+                    if(this.isBrighten()){
+                        if(grayscaleMap[x][y] - r <= 0 && grayscaleMap[x][y] >= -k){
+                            grayscaleMap[x][y] = r;
+                        }
+                    }
+                    else{
+                        if(grayscaleMap[x][y] - r >= 0 && grayscaleMap[x][y] <= k){
+                            grayscaleMap[x][y] = r;
+                        }
+                    }
+                }
+            }
+        }
+        updateImageFromMap();
     }
 }
