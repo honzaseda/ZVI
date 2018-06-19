@@ -224,11 +224,21 @@ public class MatrixSegmentation {
      * @param index
      * @return Integer
      */
-    private int getReferenceBrightness(int index){
+    private int getReferenceBrightness(int index, boolean reverse){
         int r = 255;
+        if(reverse) {
+            r = 0;
+        }
         for(int i = 0; i < segmentedImage.getWidth(); i++){
-            if(grayscaleMap[i][index] < r){
-                r = grayscaleMap[i][index];
+            if(reverse) {
+                if (grayscaleMap[i][index] > r) {
+                    r = grayscaleMap[i][index];
+                }
+            }
+            else {
+                if (grayscaleMap[i][index] < r) {
+                    r = grayscaleMap[i][index];
+                }
             }
         }
         return r;
@@ -244,7 +254,12 @@ public class MatrixSegmentation {
     public void sequentialRecoloringSegmentation(boolean bothDirections, int r, int k, boolean findR){
         for(int y = 0; y < segmentedImage.getHeight(); y++){
             if(findR){
-                r = getReferenceBrightness(y);
+                if(!bothDirections && this.isBrighten()){
+                    r = getReferenceBrightness(y, true);
+                }
+                else {
+                    r = getReferenceBrightness(y, false);
+                }
             }
             for (int x = 0; x < segmentedImage.getWidth(); x++){
                 if(bothDirections){
@@ -254,12 +269,12 @@ public class MatrixSegmentation {
                 }
                 else {
                     if(this.isBrighten()){
-                        if(grayscaleMap[x][y] - r <= 0 && grayscaleMap[x][y] >= -k){
+                        if(grayscaleMap[x][y] - r <= 0 && grayscaleMap[x][y] - r >= -k){
                             grayscaleMap[x][y] = r;
                         }
                     }
                     else{
-                        if(grayscaleMap[x][y] - r >= 0 && grayscaleMap[x][y] <= k){
+                        if(grayscaleMap[x][y] - r >= 0 && grayscaleMap[x][y] - r <= k){
                             grayscaleMap[x][y] = r;
                         }
                     }

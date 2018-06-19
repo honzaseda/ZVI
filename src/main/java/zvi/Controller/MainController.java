@@ -494,8 +494,14 @@ public class MainController {
 
 
             if (r >= 0 && r <= 255 && k >= 0 && k <= 255) {
-                System.out.println("Probíhá segmentace rozplavováním.");
-                reportDialog.setText("Probíhá segmentace rozplavováním.");
+                if(automaticReferenceBrightness.isSelected()){
+                    System.out.println("Probíhá segmentace rozplavováním. Referenční jas: Automatický, hloubka: " + k);
+                    reportDialog.setText("Probíhá segmentace rozplavováním. Referenční jas: Automatický, hloubka: " + k);
+                }
+                else {
+                    System.out.println("Probíhá segmentace rozplavováním. Referenční jas: " + r + ", hloubka: " + k);
+                    reportDialog.setText("Probíhá segmentace rozplavováním. Referenční jas: " + r + ", hloubka: " + k);
+                }
                 matrixSegmentation = new MatrixSegmentation(loadedImage, 0);
 
                 if(!useBothDirections){
