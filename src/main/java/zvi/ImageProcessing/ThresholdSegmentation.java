@@ -89,7 +89,7 @@ public class ThresholdSegmentation {
     }
 
     /*
-    Filtering using simple FIR filter with [1,2,1] mask
+    Filtering using simple FIR filter with symetric 1 mask
      */
     private void filterHistogram() {
         int length = imageHistogram.length;
@@ -111,6 +111,8 @@ public class ThresholdSegmentation {
         this.thresholds.clear();
         ArrayList<Integer> maxima = findHistogramLocalMaxima(distance);
         ArrayList<Integer> thresholds = new ArrayList<>();
+
+        System.out.println("Hledání lokálních maxim v histogramu pro epsilon " + ImageHandler.getMaximumVicinity() + ". Nalezeno: " + maxima);
 
         //TODO co když jenom jedno max
 
@@ -146,7 +148,7 @@ public class ThresholdSegmentation {
         for (int i = 0; i < length; i++) {
             boolean isLocalMaxima = true;
             if (imageHistogram[i] > 0) {
-                for (int j = 1; j <= ImageHandler.getMaximumVicinity() / 2; j++) {
+                for (int j = 1; j <= ImageHandler.getMaximumVicinity(); j++) {
                     if (i - j >= 0) {
                         if (imageHistogram[i] < imageHistogram[i - j]) {
                             isLocalMaxima = false;

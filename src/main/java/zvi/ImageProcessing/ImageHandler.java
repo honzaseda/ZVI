@@ -26,8 +26,9 @@ public class ImageHandler {
                 int g = pixelColor.getGreen();
                 int b = pixelColor.getBlue();
                 int grayLevel = (r + g + b) / 3;
-                int gray = (grayLevel << 16) | (grayLevel << 8) | grayLevel;
-                image.setRGB(x, y, gray);
+                Color grayPixel = new Color(grayLevel, grayLevel, grayLevel);
+//                int gray = (grayLevel << 16) | (grayLevel << 8) | grayLevel;
+                image.setRGB(x, y, grayPixel.getRGB());
             }
         }
         return image;

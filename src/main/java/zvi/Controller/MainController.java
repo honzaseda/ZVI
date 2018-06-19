@@ -226,18 +226,18 @@ public class MainController {
         if (segmentedImageView.getImage() != null) {
             FileChooser fileChooser = new FileChooser();
 
-            FileChooser.ExtensionFilter extFilterBMP = new FileChooser.ExtensionFilter("Soubory BMP (*.bmp)", "*.BMP");
-            FileChooser.ExtensionFilter extFilterJPG = new FileChooser.ExtensionFilter("Soubory JPG (*.jpg)", "*.JPG *.JPEG");
-            FileChooser.ExtensionFilter extFilterPNG = new FileChooser.ExtensionFilter("Soubory PNG (*.png)", "*.PNG");
-            fileChooser.getExtensionFilters().addAll(extFilterBMP, extFilterJPG, extFilterPNG);
+            FileChooser.ExtensionFilter extFilterBMP = new FileChooser.ExtensionFilter("Soubory PNG (*.png)", "*.png");
+            fileChooser.getExtensionFilters().addAll(extFilterBMP);
 
             fileChooser.setTitle("Uložit segmentovaný obraz");
-            fileChooser.setInitialFileName(fileName + "-segmented");
+            fileChooser.setInitialFileName("segmented-" + fileName);
             File saveFile = fileChooser.showSaveDialog(Main.parentWindow);
             if (saveFile != null) {
                 try {
-                    ImageIO.write(SwingFXUtils.fromFXImage(segmentedImageView.getImage(),
-                            null), "png", saveFile);
+                    System.out.println("Ukládám obrázek");
+
+                    BufferedImage saveImage = SwingFXUtils.fromFXImage(segmentedImageView.getImage(),null);
+                    ImageIO.write( saveImage, "png", saveFile);
                 } catch (IOException ex) {
                     System.out.println("Nepodařilo se uložit segmentovaný obraz.");
                     reportDialog.setText("Nepodařilo se uložit segmentovaný obraz.");
@@ -280,6 +280,8 @@ public class MainController {
         xAxis.setLabel(null);
         histogram.setLegendVisible(false);
 
+        xAxis.setLabel("jas");
+        yAxis.setLabel("četnost");
 
         final XYChart.Series<Number, Number> histogramSeries = new XYChart.Series<Number, Number>();
         for (int i = 0; i < histogramValues.length; i++) {
@@ -545,7 +547,7 @@ public class MainController {
     private void openSetMax() {
         VBox pane = new VBox();
 
-        Label text = new Label("Nastavení velikosti oblasti (2 - 32) v histogramu, ve kterém je jas lokálním maximem.");
+        Label text = new Label("Nastavení velikosti oblasti <-e, e> v histogramu, ve kterém je jas lokálním maximem.");
         text.setWrapText(true);
         text.setPrefWidth(320);
 
@@ -577,6 +579,10 @@ public class MainController {
                 int max = Integer.parseInt(textField.getText());
                 if (max > 1 && max < 33) {
                     ImageHandler.setMaximumVicinity(max);
+                    reportDialog.setText("Epsilon nastaveno na " + max);
+                }
+                else {
+                    reportDialog.setText("Neplatná hodnota nastavení epsilon. povolené hodnoty 2 - 32");
                 }
             } catch (Exception e) {
                 System.out.println("Neplatná hodnota nastavení.");

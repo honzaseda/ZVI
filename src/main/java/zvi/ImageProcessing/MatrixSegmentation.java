@@ -80,20 +80,24 @@ public class MatrixSegmentation {
     }
 
     public void recoloringSegmentation() {
-        int minIndex = findDiagMin();
-        int maxNeighbour = getMaxNeighbour(minIndex);
-        for (int i = 0; i < 256; i++) {
-            adjacencyMatrix[i][maxNeighbour] += adjacencyMatrix[i][minIndex];
-            adjacencyMatrix[i][minIndex] = 0;
+        int c = 0;
+        while(numberOfRegions() > numberOfSegments) {
+            int minIndex = findDiagMin();
+            int maxNeighbour = getMaxNeighbour(minIndex);
+            for (int i = 0; i < 256; i++) {
+                adjacencyMatrix[i][maxNeighbour] += adjacencyMatrix[i][minIndex];
+                adjacencyMatrix[i][minIndex] = 0;
 
-            adjacencyMatrix[maxNeighbour][i] += adjacencyMatrix[minIndex][i];
-            adjacencyMatrix[minIndex][i] = 0;
+                adjacencyMatrix[maxNeighbour][i] += adjacencyMatrix[minIndex][i];
+                adjacencyMatrix[minIndex][i] = 0;
+            }
+            System.out.println(c + ". Přebarvuji jas " + minIndex + " na " + maxNeighbour);
+            updateGrayscaleMap(minIndex, maxNeighbour);
+            c++;
         }
-
-        updateGrayscaleMap(minIndex, maxNeighbour);
-        if (numberOfRegions() > numberOfSegments) {
-            recoloringSegmentation();
-        }
+//        if (numberOfRegions() > numberOfSegments) {
+//            recoloringSegmentation();
+//        }
     }
 
     private int numberOfRegions() {
