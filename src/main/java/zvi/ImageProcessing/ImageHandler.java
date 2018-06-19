@@ -14,9 +14,7 @@ public class ImageHandler {
         ImageHandler.maximumVicinity = maximumVicinity;
     }
 
-    private static int maximumVicinity = 20;
-
-
+    private static int maximumVicinity = 15;
 
     public static BufferedImage getGrayScaleImage(BufferedImage image) {
         for (int x = 0; x < image.getWidth(); x++) {
@@ -27,7 +25,6 @@ public class ImageHandler {
                 int b = pixelColor.getBlue();
                 int grayLevel = (r + g + b) / 3;
                 Color grayPixel = new Color(grayLevel, grayLevel, grayLevel);
-//                int gray = (grayLevel << 16) | (grayLevel << 8) | grayLevel;
                 image.setRGB(x, y, grayPixel.getRGB());
             }
         }

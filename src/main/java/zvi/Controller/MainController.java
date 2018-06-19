@@ -226,8 +226,8 @@ public class MainController {
         if (segmentedImageView.getImage() != null) {
             FileChooser fileChooser = new FileChooser();
 
-            FileChooser.ExtensionFilter extFilterBMP = new FileChooser.ExtensionFilter("Soubory PNG (*.png)", "*.png");
-            fileChooser.getExtensionFilters().addAll(extFilterBMP);
+            FileChooser.ExtensionFilter extFilterPNG = new FileChooser.ExtensionFilter("Soubory PNG (*.png)", "*.png");
+            fileChooser.getExtensionFilters().addAll(extFilterPNG);
 
             fileChooser.setTitle("Uložit segmentovaný obraz");
             fileChooser.setInitialFileName("segmented-" + fileName);

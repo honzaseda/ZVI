@@ -59,19 +59,15 @@ public class ThresholdSegmentation {
         Arrays.sort(sortedThresholds);
         System.out.println("Probíhá segmentace. Použité prahy: " + thresholds);
 
-        BufferedImage loadedGrayscale = ImageHandler.getGrayScaleImage(loadedImage);
+//        BufferedImage loadedGrayscale = ImageHandler.getGrayScaleImage(loadedImage);
+        int[][] grayMap = ImageHandler.getGrayscaleMap(loadedImage);
 
         for (int x = 0; x < loadedImage.getWidth(); ++x) {
             for (int y = 0; y < loadedImage.getHeight(); ++y) {
                 int segmentedLevel;
-                int rgb = loadedGrayscale.getRGB(x, y);
-                int r = (rgb >> 16) & 0xFF;
-                int g = (rgb >> 8) & 0xFF;
-                int b = (rgb & 0xFF);
-                int grayLevel = (r + g + b) / 3;
                 segmentedLevel = 0;
                 for(int i = 0; i < thresholds.size(); i++){
-                    if (grayLevel > sortedThresholds[i]){
+                    if (grayMap[x][y] > sortedThresholds[i]){
                         if (i == thresholds.size() - 1){
                             segmentedLevel = 255;
                         }
@@ -89,7 +85,7 @@ public class ThresholdSegmentation {
     }
 
     /*
-    Filtering using simple FIR filter with symetric 1 mask
+    Filtering using simple Mean filter with size 5
      */
     private void filterHistogram() {
         int length = imageHistogram.length;

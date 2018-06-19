@@ -87,7 +87,9 @@ public class MatrixSegmentation {
             for (int i = 0; i < 256; i++) {
                 adjacencyMatrix[i][maxNeighbour] += adjacencyMatrix[i][minIndex];
                 adjacencyMatrix[i][minIndex] = 0;
+            }
 
+            for (int i = 0; i < 256; i++) {
                 adjacencyMatrix[maxNeighbour][i] += adjacencyMatrix[minIndex][i];
                 adjacencyMatrix[minIndex][i] = 0;
             }
