@@ -356,7 +356,7 @@ public class MainController {
             System.out.println("Probíhá segmentace přebarvováním. Počet segmentů: " + segments);
             reportDialog.setText("Probíhá segmentace přebarvováním. Počet segmentů: " + segments);
             matrixSegmentation = new MatrixSegmentation(loadedImage, segments);
-            matrixSegmentation.createAdjacencyMatrix(useAllNeighbours);
+            matrixSegmentation.createCoocurencyMatrix(useAllNeighbours);
             matrixSegmentation.recoloringSegmentation();
 //            Image image = SwingFXUtils.toFXImage(ImageHandler.getGrayScaleImage(loadedImage), null);
             Image image = SwingFXUtils.toFXImage(matrixSegmentation.getSegmentedImage(), null);
@@ -414,23 +414,25 @@ public class MainController {
         } catch (NullPointerException e) {
             System.out.println("Nelze odebrat práh, nebyl vytvořen histogram.");
             reportDialog.setText("Nelze odebrat práh, nebyl vytvořen histogram");
+        } catch (NumberFormatException e){
+
         }
     }
 
     public void automaticSegmentation() {
         int segments = Integer.parseInt(thresholdSegments.getText());
-        int maxVicinity = ImageHandler.getMaximumVicinity();
+        int epsilon = ImageHandler.getEpsilon();
         int distance = 256 / segments;
         ArrayList<Integer> t;
         boolean smallerVicinity = false;
         reportDialog.setText("Probíhá segmentace automatickým prahováním. Počet zadaných segmentů: " + segments);
         do {
-            t = thresholdSegmentation.findThresholds(distance);
+            t = thresholdSegmentation.findThresholds(epsilon, distance);
 
             distance = distance - 10;
             if (distance < 10) {
                 if (!smallerVicinity) {
-                    maxVicinity = maxVicinity / 2;
+                    epsilon = epsilon / 2;
                     distance = 256 / segments;
                     smallerVicinity = true;
                 } else {
@@ -551,7 +553,7 @@ public class MainController {
         text.setWrapText(true);
         text.setPrefWidth(320);
 
-        String defaultValue = Integer.toString(ImageHandler.getMaximumVicinity());
+        String defaultValue = Integer.toString(ImageHandler.getEpsilon());
         TextField textField = new TextField();
         textField.setText(defaultValue);
         textField.setMaxWidth(100);
@@ -578,7 +580,7 @@ public class MainController {
             try {
                 int max = Integer.parseInt(textField.getText());
                 if (max > 1 && max < 33) {
-                    ImageHandler.setMaximumVicinity(max);
+                    ImageHandler.setEpsilon(max);
                     reportDialog.setText("Epsilon nastaveno na " + max);
                 }
                 else {

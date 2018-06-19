@@ -8,10 +8,14 @@ import java.util.Set;
 
 public class ThresholdSegmentation {
     private int[] imageHistogram;
-    //    private int threshold;
     private BufferedImage loadedImage;
     private Set<Integer> thresholds;
 
+    /**
+     * ThresholdSegmentation Constructor
+     * @param imageHandler
+     * @param filtering
+     */
     public ThresholdSegmentation(BufferedImage imageHandler, boolean filtering) {
         imageHistogram = new int[256];
         loadedImage = imageHandler;
@@ -22,22 +26,38 @@ public class ThresholdSegmentation {
         }
     }
 
+    /**
+     * @param value
+     */
     public void addThreshold(int value) {
         thresholds.add(value);
     }
 
+    /**
+     * @param value
+     */
     public void removeThreshold(int value) {
         thresholds.remove(value);
     }
 
+    /**
+     * @return Set<Integer>
+     */
     public Set<Integer> getThresholds() {
         return thresholds;
     }
 
+    /**
+     * @return int[]
+     */
     public int[] getImageHistogram() {
         return imageHistogram;
     }
 
+    /**
+     * Creates histogram from input image
+     * @param image
+     */
     private void createHistogram(BufferedImage image) {
         int imageWidth = image.getWidth();
         int imageHeight = image.getHeight();
@@ -50,6 +70,10 @@ public class ThresholdSegmentation {
         }
     }
 
+    /**
+     * Threshold segmentation using found thresholds
+     * @return BufferedImage segmented image
+     */
     public BufferedImage segmentation() {
         BufferedImage segmentedImage = new BufferedImage(loadedImage.getWidth(), loadedImage.getHeight(), BufferedImage.TYPE_INT_RGB);
 
@@ -64,8 +88,7 @@ public class ThresholdSegmentation {
 
         for (int x = 0; x < loadedImage.getWidth(); ++x) {
             for (int y = 0; y < loadedImage.getHeight(); ++y) {
-                int segmentedLevel;
-                segmentedLevel = 0;
+                int segmentedLevel = 0;
                 for(int i = 0; i < thresholds.size(); i++){
                     if (grayMap[x][y] > sortedThresholds[i]){
                         if (i == thresholds.size() - 1){
@@ -84,8 +107,8 @@ public class ThresholdSegmentation {
         return segmentedImage;
     }
 
-    /*
-    Filtering using simple Mean filter with size 5
+    /**
+     * Filtering using simple Mean filter with size 5
      */
     private void filterHistogram() {
         int length = imageHistogram.length;
@@ -103,12 +126,18 @@ public class ThresholdSegmentation {
         imageHistogram = filteredHistogram;
     }
 
-    public ArrayList<Integer> findThresholds(int distance) {
+    /**
+     * Finds possible thresholds for input parameters
+     * @param epsilon
+     * @param distance
+     * @return ArrayList
+     */
+    public ArrayList<Integer> findThresholds(int epsilon, int distance) {
         this.thresholds.clear();
-        ArrayList<Integer> maxima = findHistogramLocalMaxima(distance);
+        ArrayList<Integer> maxima = findHistogramLocalMaxima(epsilon, distance);
         ArrayList<Integer> thresholds = new ArrayList<>();
 
-        System.out.println("Hledání lokálních maxim v histogramu pro epsilon " + ImageHandler.getMaximumVicinity() + ". Nalezeno: " + maxima);
+        System.out.println("Hledání lokálních maxim v histogramu pro epsilon " + epsilon + " se vzdáleností " + distance + ". Nalezeno: " + maxima);
 
         //TODO co když jenom jedno max
 
@@ -138,13 +167,19 @@ public class ThresholdSegmentation {
         return thresholds;
     }
 
-    private ArrayList<Integer> findHistogramLocalMaxima(int distance) {
+    /**
+     * Finds all local maxima in histogram
+     * @param epsilon
+     * @param distance
+     * @return ArrayList
+     */
+    private ArrayList<Integer> findHistogramLocalMaxima(int epsilon, int distance) {
         ArrayList<Integer> max = new ArrayList<>();
         int length = imageHistogram.length;
         for (int i = 0; i < length; i++) {
             boolean isLocalMaxima = true;
             if (imageHistogram[i] > 0) {
-                for (int j = 1; j <= ImageHandler.getMaximumVicinity(); j++) {
+                for (int j = 1; j <= epsilon; j++) {
                     if (i - j >= 0) {
                         if (imageHistogram[i] < imageHistogram[i - j]) {
                             isLocalMaxima = false;

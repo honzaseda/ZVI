@@ -2,20 +2,30 @@ package zvi.ImageProcessing;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferByte;
 
 public class ImageHandler {
 
-    public static int getMaximumVicinity() {
-        return maximumVicinity;
+    /**
+     * @return Integer
+     */
+    public static int getEpsilon() {
+        return epsilon;
     }
 
-    public static void setMaximumVicinity(int maximumVicinity) {
-        ImageHandler.maximumVicinity = maximumVicinity;
+    /**
+     * @param epsilon
+     */
+    public static void setEpsilon(int epsilon) {
+        ImageHandler.epsilon = epsilon;
     }
 
-    private static int maximumVicinity = 15;
+    private static int epsilon = 15;
 
+    /**
+     * Converts passed image to grayscale
+     * @param image
+     * @return BufferedImage
+     */
     public static BufferedImage getGrayScaleImage(BufferedImage image) {
         for (int x = 0; x < image.getWidth(); x++) {
             for (int y = 0; y < image.getHeight(); y++) {
@@ -31,6 +41,11 @@ public class ImageHandler {
         return image;
     }
 
+    /**
+     * Creates 2D array of grayscale values of image
+     * @param image
+     * @return int[][]
+     */
     public static int[][] getGrayscaleMap(BufferedImage image) {
         int imageWidth = image.getWidth();
         int imageHeight = image.getHeight();
